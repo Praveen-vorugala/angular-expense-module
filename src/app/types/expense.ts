@@ -24,18 +24,22 @@ export interface ExpensePolicy {
     id: string;
     name: string;
     description: string;
-    frequency: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+    frequency: 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
     conditions: PolicyCondition[];
     rules: ExpenseRule[];
 }
 
-export type ExpenseCategory = 'FIELDWORK' | 'MEALS' | 'LODGING' | 'OTHER' | 'ADMIN';
+export interface ExpenseCategory {
+    id: string;
+    name: string;
+    description?: string;
+}
 
 export interface ExpenseType {
     id: string;
     name: string;
-    description: string;
-    category: ExpenseCategory;
+    category: string;
+    description?: string;
     isActive: boolean;
 }
 
@@ -164,6 +168,84 @@ export const mockPolicies: ExpensePolicy[] = [
             userConditions: [],
             conditions: []
         }]
+    },
+    {
+        "name": "New Policy for ms 1",
+        "description": "For ms1",
+        "frequency": "DAILY",
+        "conditions": [
+            {
+                "propertyType": "ROLE",
+                "value": "EMPLOYEE"
+            },
+            {
+                "propertyType": "GRADE",
+                "value": "MS1"
+            }
+        ],
+        "rules": [
+            {
+                "id": "1747306007609-1",
+                "expenseTypeId": "1",
+                "valueType": "CONSTANT",
+                "amount": 325,
+                "userConditions": []
+            },
+            {
+                "id": "1747306007609-2",
+                "expenseTypeId": "2",
+                "valueType": "CONSTANT",
+                "amount": 325,
+                "userConditions": []
+            },
+            {
+                "id": "1747306007609-4",
+                "expenseTypeId": "4",
+                "valueType": "CONSTANT",
+                "amount": 800,
+                "userConditions": []
+            },
+            {
+                "id": "1747306007609-5",
+                "expenseTypeId": "5",
+                "valueType": "CONSTANT",
+                "amount": 200,
+                "userConditions": []
+            },
+            {
+                "id": "1747306007609-6",
+                "expenseTypeId": "6",
+                "valueType": "CONSTANT",
+                "amount": 900,
+                "userConditions": []
+            },
+            {
+                "id": "1747306017967",
+                "expenseTypeId": "8",
+                "valueType": "ACTUAL",
+                "amount": 0,
+                "operator": "<",
+                "limitAmount": 1000,
+                "userConditions": []
+            },
+            {
+                "id": "1747306031250",
+                "expenseTypeId": "9",
+                "valueType": "ACTUAL",
+                "amount": 0,
+                "operator": "<",
+                "limitAmount": 500,
+                "userConditions": []
+            },
+            {
+                "id": "1747311621860",
+                "expenseTypeId": "7",
+                "valueType": "CALCULATED",
+                "amount": 0,
+                "userConditions": []
+            }
+        ],
+        "id": "3"
     }
 ];
 
@@ -267,5 +349,5 @@ export interface ExpenseRule {
     operator?: ComparisonOperator; // For ACTUAL
     limitAmount?: number; // For ACTUAL
     userConditions: PolicyCondition[];
-    conditions: PolicyCondition[];
+    conditions?: PolicyCondition[];
 }

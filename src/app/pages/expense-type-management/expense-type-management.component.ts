@@ -39,7 +39,7 @@ import { ExpenseType, ExpenseCategory } from 'src/app/types/expense';
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                             <option value="" disabled>Select category</option>
-                            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+                            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
                         </select>
                     </div>
                 </div>
@@ -61,7 +61,7 @@ import { ExpenseType, ExpenseCategory } from 'src/app/types/expense';
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">{{ type.name }}</h3>
                             <p class="text-sm text-gray-500">{{ type.description }}</p>
-                            <p class="text-xs text-gray-400">Category: {{ type.category }}</p>
+                            <p class="text-xs text-gray-400">Category: {{ getCategoryName(type.category) }}</p>
                         </div>
                         <div class="flex flex-col items-end space-y-2">
                             <span [class]="type.isActive ? 'text-green-600' : 'text-red-600'" class="text-sm">
@@ -80,7 +80,7 @@ import { ExpenseType, ExpenseCategory } from 'src/app/types/expense';
 export class ExpenseTypeManagementComponent implements OnInit {
     expenseTypes: ExpenseType[] = [];
     expenseTypeForm: FormGroup;
-    categories: ExpenseCategory[] = ['FIELDWORK', 'MEALS', 'LODGING', 'OTHER', 'ADMIN'];
+    categories: ExpenseCategory[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -95,12 +95,24 @@ export class ExpenseTypeManagementComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadExpenseTypes();
+        this.loadCategories();
     }
 
     loadExpenseTypes(): void {
         this.expenseService.expenseTypes$.subscribe(types => {
             this.expenseTypes = types;
         });
+    }
+
+    loadCategories(): void {
+        this.expenseService.getExpenseCategories().subscribe(categories => {
+            this.categories = categories;
+        });
+    }
+
+    getCategoryName(categoryId: string): string {
+        const category = this.categories.find(c => c.id === categoryId);
+        return category ? category.name : categoryId;
     }
 
     onSubmit(): void {

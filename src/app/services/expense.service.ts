@@ -15,7 +15,8 @@ import {
     mockPolicies,
     mockExpenses,
     mockDropdownTypes,
-    MOCK_PROPERTIES
+    MOCK_PROPERTIES,
+    ExpenseCategory
 } from '../types/expense';
 
 @Injectable({
@@ -226,5 +227,16 @@ export class ExpenseService {
             expenseType.isActive = !expenseType.isActive;
             this.expenseTypesSubject.next([...mockExpenseTypes]);
         }
+    }
+
+    getExpenseCategories(): Observable<ExpenseCategory[]> {
+        // For now, return mock data. Replace with actual API call later
+        return of([
+            { id: 'FIELDWORK', name: 'Fieldwork', description: 'Fieldwork related expenses' },
+            { id: 'MEALS', name: 'Meals', description: 'Meal related expenses' },
+            { id: 'LODGING', name: 'Lodging', description: 'Lodging related expenses' },
+            { id: 'OTHER', name: 'Other', description: 'Other expenses' },
+            { id: 'ADMIN', name: 'Admin', description: 'Administrative expenses' }
+        ]);
     }
 }
