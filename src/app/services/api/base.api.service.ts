@@ -30,7 +30,7 @@ export class BaseApiService {
     return headers
         .append('Accept', 'application/json')
         .append('Content-Type', 'application/json')
-        .append('client', 'Thrive Portal')
+        .append('client', 'Expense Module')
         .append('app-version', environment.version)
   }
 
