@@ -6,10 +6,12 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LayoutModule } from './layout/layout.module';
+import { ExpenseReportsComponent } from './pages/expense-reports/expense-reports.component';
+import { AuthService } from './services/auth.service';
 
 @NgModule({
     declarations: [
-        AppComponent
+        AppComponent,
     ],
     imports: [
         BrowserModule,
@@ -19,7 +21,7 @@ import { LayoutModule } from './layout/layout.module';
         AppRoutingModule,
         LayoutModule
     ],
-    providers: [],
+    providers: [AuthService],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -1,0 +1,186 @@
+<div class="">
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <form [formGroup]="expenseForm">
+                <div class="space-y-6">
+                    <!-- Expense Type -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-medium text-gray-700">Expense Type</label>
+                        <div class="relative mt-1">
+                            <div class="relative">
+                                <button 
+                                    type="button"
+                                    class="w-full px-4 py-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-400 transition-all duration-200 ease-in-out flex justify-between items-center border-gray-300"
+                                    (click)="toggleDropdown()"
+                                    [class.border-red-500]="expenseForm.get('expenseType')?.invalid && expenseForm.get('expenseType')?.touched"
+                                    [class.text-red-600]="expenseForm.get('expenseType')?.invalid && expenseForm.get('expenseType')?.touched"
+                                >
+                                    <span *ngIf="expenseForm.get('expenseType')?.value as expenseType; else placeholder">
+                                        {{getExpenseTypeName(expenseType)}}
+                                    </span>
+                                    <ng-template #placeholder>
+                                        <span class="text-gray-500">Select expense type</span>
+                                    </ng-template>
+                                    <svg class="h-5 w-5 text-gray-400 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                
+                                <div *ngIf="showDropdown" class="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <div *ngFor="let type of getAvailableExpenseTypes()" 
+                                         class="px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer"
+                                         (click)="selectExpenseType(type)">
+                                        {{type.name}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div *ngIf="expenseForm.get('expenseType')?.invalid && expenseForm.get('expenseType')?.touched" 
+                             class="mt-1 text-sm text-red-600">
+                            Please select an expense type
+                        </div>
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="flex flex-col gap-2" *ngIf="!isPetrolAllowance">
+                        <label for="amount" class="text-sm font-medium text-gray-700">Amount</label>
+                        <div class="relative">
+                            <input type="number" id="amount" name="amount" formControlName="amount"
+                                   class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+                            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</div>
+                        </div>
+                        <div *ngIf="expenseForm.get('amount')?.invalid && expenseForm.get('amount')?.touched" 
+                             class="mt-1 text-sm text-red-600">
+                            Please enter a valid amount (must be greater than 0)
+                        </div>
+                    </div>
+
+                    <!-- Location Fields for Petrol Allowance -->
+                    <div class="flex flex-col gap-2" *ngIf="isPetrolAllowance">
+                        <label for="fromLocation" class="text-sm font-medium text-gray-700">From Location</label>
+                        <input type="text" id="fromLocation" name="fromLocation" formControlName="fromLocation"
+                               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+                        <div *ngIf="expenseForm.get('fromLocation')?.invalid && expenseForm.get('fromLocation')?.touched" 
+                             class="mt-1 text-sm text-red-600">
+                            Please enter the starting location
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2" *ngIf="isPetrolAllowance">
+                        <label for="toLocation" class="text-sm font-medium text-gray-700">To Location</label>
+                        <input type="text" id="toLocation" name="toLocation" formControlName="toLocation"
+                               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+                        <div *ngIf="expenseForm.get('toLocation')?.invalid && expenseForm.get('toLocation')?.touched" 
+                             class="mt-1 text-sm text-red-600">
+                            Please enter the destination location
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2" *ngIf="isPetrolAllowance">
+                        <label class="text-sm font-medium text-gray-700">Calculated Amount</label>
+                        <div class="mt-1 p-3 bg-gray-50 rounded-md border border-gray-300">
+                            ₹{{expenseForm.get('amount')?.value || 0 | number:'1.2-2'}}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Distance: {{distance}} KM (Rate: ₹{{petrolRate}}/KM)
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="flex flex-col gap-2">
+                        <label for="description" class="text-sm font-medium text-gray-700">Description (Optional)</label>
+                        <textarea id="description" name="description" formControlName="description"
+                                  class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3 h-24 resize-none">
+                        </textarea>
+                    </div>
+
+                    <!-- Receipt -->
+                    <div class="flex flex-col gap-2">
+                        <label for="receipt" class="text-sm font-medium text-gray-700">Receipt (Optional)</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="receipt" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                        <span>Upload a file</span>
+                                        <input id="receipt" name="receipt" type="file" class="sr-only" (change)="onFileSelected($event)" accept=".jpg,.jpeg,.png,.pdf">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="pt-5">
+                        <div class="flex justify-end">
+                            <button type="button" (click)="onCancel()" 
+                                    class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Cancel
+                            </button>
+                            <button type="button" (click)="addExpense()" [disabled]="expenseForm.invalid" 
+                                    class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Add Expense
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Added Expenses List -->
+            <div class="mt-6" *ngIf="getAddedExpenses().length > 0">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Added Expenses</h3>
+                <div class="bg-white shadow sm:rounded-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr *ngFor="let expense of getAddedExpenses()">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {{getExpenseTypeName(expense.expenseType)}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {{expense.amount | currency}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {{expense.description || 'N/A'}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {{expense.receiptFile || 'N/A'}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button (click)="removeExpense(expense.id)" 
+                                                class="text-red-600 hover:text-red-900">
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6">
+                    <div class="flex justify-end">
+                        <button type="button" (click)="submitExpenses()" 
+                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Submit Expenses
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

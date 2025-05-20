@@ -15,7 +15,8 @@ import {
     mockPolicies,
     mockExpenses,
     mockDropdownTypes,
-    MOCK_PROPERTIES
+    MOCK_PROPERTIES,
+    ExpenseItem
 } from '../types/expense';
 
 @Injectable({
@@ -35,6 +36,14 @@ export class ExpenseService {
     expenseTypes$ = this.expenseTypesSubject.asObservable();
     dropdownTypes$ = this.dropdownTypesSubject.asObservable();
     properties$ = this.propertiesSubject.asObservable();
+
+    getCurrentUser(): User | null {
+        return this.currentUserSubject.value;
+    }
+
+    getPolicies(): ExpensePolicy[] {
+        return this.policiesSubject.value;
+    }
 
     constructor() {}
 
@@ -99,6 +108,17 @@ export class ExpenseService {
         return of(MOCK_PROPERTIES);
     }
 
+    getExpenseTypes(): Observable<ExpenseType[]> {
+        return this.expenseTypes$;
+    }
+
+    submitExpense(expense: ExpenseReport): Observable<ExpenseReport> {
+        // Add to mock expenses
+        mockExpenses.push({...expense, id: Date.now().toString()});
+        this.expensesSubject.next([...mockExpenses]);
+        return of({...expense, id: Date.now().toString()});
+    }
+
     createProperty(property: Omit<PropertyType, 'id' | 'createdAt' | 'updatedAt' | 'values'>): Observable<PropertyType> {
         const newProperty: PropertyType = {
             ...property,
@@ -149,22 +169,54 @@ export class ExpenseService {
         return of(void 0);
     }
 
-    addExpense(reportDate: string, policyId: string, expenseItems: any[]): void {
-        const currentUser = this.currentUserSubject.value;
-        if (!currentUser) return;
+    private currentExpense: ExpenseReport | null = null;
 
-        const newExpense: ExpenseReport = {
-            id: (mockExpenses.length + 1).toString(),
-            employeeId: currentUser.id,
-            date: reportDate,
-            policyId: policyId,
-            expenses: expenseItems,
-            status: 'PENDING',
-            submittedAt: new Date().toISOString()
-        };
+    getCurrentExpense(): ExpenseReport | null {
+        return this.currentExpense;
+    }
 
+    setCurrentExpense(expense: ExpenseReport): void {
+        this.currentExpense = expense;
+    }
+
+    addExpenseItem(expenseItem: ExpenseItem): void {
+        if (!this.currentExpense) {
+            const currentUser = this.getCurrentUser();
+            if (!currentUser) return;
+
+            this.currentExpense = {
+                id: Date.now().toString(),
+                employeeId: currentUser.id,
+                date: new Date().toISOString().split('T')[0],
+                policyId: this.getPolicies()[0]?.id || '',
+                items: [],
+                totalAmount: 0,
+                status: 'PENDING',
+                submittedAt: new Date().toISOString()
+            };
+        }
+
+        // Check if this expense type is already added
+        const existingItem = this.currentExpense.items.find(item => item.expenseType === expenseItem.expenseType);
+        if (existingItem) {
+            alert('This expense type has already been added');
+            return;
+        }
+
+        this.currentExpense.items.push(expenseItem);
+    }
+
+    submitCurrentExpense(): Observable<ExpenseReport> {
+        if (!this.currentExpense) {
+            throw new Error('No expenses to submit');
+        }
+
+        const newExpense = { ...this.currentExpense };
         mockExpenses.push(newExpense);
         this.expensesSubject.next([...mockExpenses]);
+        this.currentExpense = null;
+
+        return of(newExpense);
     }
 
     updateExpenseStatus(expenseId: string, status: ExpenseStatus, remarks?: string): void {

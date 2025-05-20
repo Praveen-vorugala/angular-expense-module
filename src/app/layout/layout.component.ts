@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { ExpenseService } from '../services/expense.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -23,15 +24,15 @@ import { ExpenseService } from '../services/expense.service';
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Submit Expense
                 </a>
-                <a routerLink="/approve-expenses" routerLinkActive="border-indigo-500 text-gray-900"
+                <a *ngIf="!isEmployee" routerLink="/approve-expenses" routerLinkActive="border-indigo-500 text-gray-900"
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Approve Expenses
                 </a>
-                <a routerLink="/policies" routerLinkActive="border-indigo-500 text-gray-900"
+                <a *ngIf="!isEmployee" routerLink="/policies" routerLinkActive="border-indigo-500 text-gray-900"
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Policies
                 </a>
-                <a routerLink="/expense-types" routerLinkActive="border-indigo-500 text-gray-900"
+                <a *ngIf="!isEmployee" routerLink="/expense-types" routerLinkActive="border-indigo-500 text-gray-900"
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Expense Types
                 </a>
@@ -39,11 +40,11 @@ import { ExpenseService } from '../services/expense.service';
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Reports
                 </a>
-                <a routerLink="/dropdown-types" routerLinkActive="border-indigo-500 text-gray-900"
+                <a *ngIf="!isEmployee" routerLink="/dropdown-types" routerLinkActive="border-indigo-500 text-gray-900"
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Dropdown Types
                 </a>
-                <a routerLink="/user-properties" routerLinkActive="border-indigo-500 text-gray-900"
+                <a *ngIf="!isEmployee" routerLink="/user-properties" routerLinkActive="border-indigo-500 text-gray-900"
                    class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   User Properties
                 </a>
@@ -67,10 +68,16 @@ import { ExpenseService } from '../services/expense.service';
   `
 })
 export class LayoutComponent {
+  isEmployee = false;
+
   constructor(
     private router: Router,
-    private expenseService: ExpenseService
-  ) {}
+    private expenseService: ExpenseService,
+    private authService: AuthService
+  ) {
+    // Initialize user role check
+    this.isEmployee = this.authService.isEmployee;
+  }
 
   logout(): void {
     this.expenseService.logout();
