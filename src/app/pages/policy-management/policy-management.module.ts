@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PolicyManagementComponent } from './policy-management.component';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
 
 @NgModule({
     declarations: [
@@ -12,6 +13,7 @@ import { PolicyManagementComponent } from './policy-management.component';
         CommonModule,
         ReactiveFormsModule,
         FormsModule,
+        MatIconModule,
         RouterModule.forChild([
             {
                 path: '',

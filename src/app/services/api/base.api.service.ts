@@ -147,7 +147,7 @@ export class BaseApiService {
     return $call.pipe(catchError(this.handleError.bind(this)));
 }
 
-  public executePost(requestOptions: PostRequest<T>): Observable<any> {
+  public executePost(requestOptions: PostRequest<any>): Observable<any> {
     return this.post<any>(requestOptions);
   }
   

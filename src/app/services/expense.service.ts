@@ -224,7 +224,7 @@ export class ExpenseService {
     toggleExpenseTypeStatus(expenseTypeId: string): void {
         const expenseType = mockExpenseTypes.find(et => et.id === expenseTypeId);
         if (expenseType) {
-            expenseType.isActive = !expenseType.isActive;
+            expenseType.is_active = !expenseType.is_active;
             this.expenseTypesSubject.next([...mockExpenseTypes]);
         }
     }

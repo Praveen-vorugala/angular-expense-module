@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../services/expense.service';
-import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyCondition, PropertyType, PropertyValue, RuleValueType, ComparisonOperator } from 'src/app/types/expense';
+import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyCondition, PropertyType, PropertyValue, RuleValueType, ComparisonOperator, PolicyReport } from 'src/app/types/expense';
 
 @Component({
     selector: 'app-policy-management',
@@ -19,9 +19,12 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">{{ policy.name }}</h3>
                                 <p class="text-sm text-gray-500">{{ policy.description }}</p>
-                                <p class="text-xs text-gray-400">Frequency: {{ policy.frequency }}</p>
                             </div>
-                            <!-- Future: Edit/Delete buttons -->
+                            <div class="flex gap-2">
+                                <button (click)="addReport(policy)" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
+                                    Add Report
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Policy Conditions -->
@@ -34,74 +37,94 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             </ul>
                         </div>
 
-                        <!-- Expense Rules -->
-                        <div *ngIf="getPolicyRules(policy).length > 0" class="border-t pt-3">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Expense Rules</h4>
-                            
-                            <!-- Constant Rules -->
-                            <div *ngIf="hasConstantRules(policy)" class="mb-3">
-                                <h5 class="text-xs font-medium text-gray-600 mb-1">Constant Rules</h5>
-                                <ul class="space-y-2">
-                                    <li *ngFor="let rule of getConstantRules(policy)" class="text-sm bg-gray-50 p-2 rounded">
-                                        <div class="flex flex-col gap-1">
-                                            <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                            <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
-                                            <!-- User Conditions for this rule -->
-                                            <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
-                                                <span class="text-xs text-gray-500">User Conditions:</span>
-                                                <ul class="mt-1 space-y-1">
-                                                    <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                        {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
-                                                    </li>
-                                                </ul>
-                                            </div>
+                        <!-- Policy Reports -->
+                        <div *ngIf="policy.reports && policy.reports.length > 0" class="border-t pt-3">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Reports</h4>
+                            <div class="space-y-4">
+                                <div *ngFor="let report of policy.reports" class="bg-gray-50 p-3 rounded">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h5 class="font-medium">Frequency: {{ report.frequency }}</h5>
                                         </div>
-                                    </li>
-                                </ul>
-                            </div>
+                                        <div class="flex gap-2">
+                                            <button (click)="openRuleModal(policy, report)" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">
+                                                Add Rule
+                                            </button>
+                                            <button (click)="removeReport(policy, report)" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
+                                                Remove Report
+                                            </button>
+                                        </div>
+                                    </div>
 
-                            <!-- Actual Rules -->
-                            <div *ngIf="hasActualRules(policy)" class="mb-3">
-                                <h5 class="text-xs font-medium text-gray-600 mb-1">Actual Rules</h5>
-                                <ul class="space-y-2">
-                                    <li *ngFor="let rule of getActualRules(policy)" class="text-sm bg-gray-50 p-2 rounded">
-                                        <div class="flex flex-col gap-1">
-                                            <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                            <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
-                                            <!-- User Conditions for this rule -->
-                                            <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
-                                                <span class="text-xs text-gray-500">User Conditions:</span>
-                                                <ul class="mt-1 space-y-1">
-                                                    <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                        {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                    <!-- Expense Rules -->
+                                    <div *ngIf="report.rules && report.rules.length > 0" class="mt-3">
+                                        <!-- Constant Rules -->
+                                        <div *ngIf="hasConstantRules(report)" class="mb-3">
+                                            <h5 class="text-xs font-medium text-gray-600 mb-1">Constant Rules</h5>
+                                            <ul class="space-y-2">
+                                                <li *ngFor="let rule of getConstantRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                        <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                        <!-- User Conditions for this rule -->
+                                                        <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                                            <span class="text-xs text-gray-500">User Conditions:</span>
+                                                            <ul class="mt-1 space-y-1">
+                                                                <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ul>
                                         </div>
-                                    </li>
-                                </ul>
-                            </div>
 
-                            <!-- Calculated Rules -->
-                            <div *ngIf="hasCalculatedRules(policy)" class="mb-3">
-                                <h5 class="text-xs font-medium text-gray-600 mb-1">Calculated Rules</h5>
-                                <ul class="space-y-2">
-                                    <li *ngFor="let rule of getCalculatedRules(policy)" class="text-sm bg-gray-50 p-2 rounded">
-                                        <div class="flex flex-col gap-1">
-                                            <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                            <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
-                                            <!-- User Conditions for this rule -->
-                                            <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
-                                                <span class="text-xs text-gray-500">User Conditions:</span>
-                                                <ul class="mt-1 space-y-1">
-                                                    <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                        {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                        <!-- Actual Rules -->
+                                        <div *ngIf="hasActualRules(report)" class="mb-3">
+                                            <h5 class="text-xs font-medium text-gray-600 mb-1">Actual Rules</h5>
+                                            <ul class="space-y-2">
+                                                <li *ngFor="let rule of getActualRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                        <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                        <!-- User Conditions for this rule -->
+                                                        <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                                            <span class="text-xs text-gray-500">User Conditions:</span>
+                                                            <ul class="mt-1 space-y-1">
+                                                                <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ul>
                                         </div>
-                                    </li>
-                                </ul>
+
+                                        <!-- Calculated Rules -->
+                                        <div *ngIf="hasCalculatedRules(report)" class="mb-3">
+                                            <h5 class="text-xs font-medium text-gray-600 mb-1">Calculated Rules</h5>
+                                            <ul class="space-y-2">
+                                                <li *ngFor="let rule of getCalculatedRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                        <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                        <!-- User Conditions for this rule -->
+                                                        <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                                            <span class="text-xs text-gray-500">User Conditions:</span>
+                                                            <ul class="mt-1 space-y-1">
+                                                                <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -111,7 +134,7 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
             <!-- Add Policy Modal -->
             <div *ngIf="showModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 overflow-scroll">
                 <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">
-                    <button (click)="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+                    <button (click)="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
                     <h2 class="text-xl font-bold mb-4">Create Policy</h2>
                     <form [formGroup]="policyForm" (ngSubmit)="onSubmit()">
                         <div class="mb-4">
@@ -125,13 +148,6 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <input type="text" formControlName="description" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter description" />
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                            <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="" disabled>Select frequency</option>
-                                <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
-                            </select>
-                        </div>
 
                         <!-- Conditions Section -->
                         <div class="mb-4">
@@ -141,237 +157,325 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             </div>
                             <div *ngIf="newConditions.length === 0" class="text-xs text-gray-400">No conditions added yet.</div>
                             <ul *ngIf="newConditions.length > 0" class="space-y-2">
-                                <li *ngFor="let cond of newConditions; let i = index" class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
-                                    <span>
-                                        <span class="font-semibold">{{ getPropertyTypeName(cond.propertyType) }}</span>
-                                        <span class="ml-2">= {{ getPropertyValueName(cond.propertyType, cond.value) }}</span>
-                                    </span>
-                                    <button type="button" (click)="removeCondition(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
-                                </li>
+                                <ng-container *ngFor="let cond of newConditions; let i = index;let last = last">
+                                    <li class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
+                                        <span>
+                                            <span class="font-semibold">{{ getPropertyTypeName(cond.propertyType) }}</span>
+                                            <span class="ml-2">= {{ getPropertyValueName(cond.propertyType, cond.value) }}</span>
+                                        </span>
+                                        <button type="button" (click)="removeCondition(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
+                                    </li>
+                                    <div *ngIf="!last" class="flex justify-center">And</div>
+                                </ng-container>
                             </ul>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit" [disabled]="!isFormValid()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Create Policy</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Report Modal -->
+            <div *ngIf="showReportModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+                <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl relative">
+                    <button (click)="closeReportModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
+                    <h3 class="text-lg font-bold mb-4">Add Report</h3>
+                    <form [formGroup]="reportForm">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                            <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="" disabled>Select frequency</option>
+                                <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
+                            </select>
                         </div>
 
                         <!-- Expense Rules Section -->
                         <div class="mb-4">
                             <div class="flex justify-between items-center mb-2">
                                 <label class="block text-sm font-medium text-gray-700">Expense Rules</label>
-                                <button type="button" (click)="openRuleModal()" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">Add Rule</button>
+                                <button type="button" (click)="openRuleModal(selectedPolicy, null)" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">Add Rule</button>
                             </div>
-                            <div *ngIf="newRules.length === 0" class="text-xs text-gray-400">No rules added yet.</div>
-                            <ul *ngIf="newRules.length > 0" class="space-y-2">
-                                <li *ngFor="let rule of newRules; let i = index" class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
-                                    <span>
-                                        <span class="font-semibold">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                        <span class="ml-2">({{ rule.valueType }})</span>
-                                        <span *ngIf="rule.valueType === 'CONSTANT'" class="ml-2">Amount: {{ rule.amount }}</span>
-                                        <span *ngIf="rule.valueType === 'CALCULATED'" class="ml-2">Formula: {{ rule.formula }}</span>
-                                    </span>
-                                    <button type="button" (click)="removeRule(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
-                                </li>
-                            </ul>
+                            <div *ngIf="newReportRules.length === 0" class="text-xs text-gray-400">No rules added yet.</div>
+                            <div *ngIf="newReportRules.length > 0" class="space-y-4">
+                                <!-- Constant Rules -->
+                                <div *ngIf="hasConstantRulesInNewReport()" class="mb-3">
+                                    <h5 class="text-xs font-medium text-gray-600 mb-1">Constant Rules</h5>
+                                    <ul class="space-y-2">
+                                        <li *ngFor="let rule of getConstantRulesFromNewReport(); let i = index" class="text-sm bg-gray-50 p-2 rounded shadow-sm">
+                                            <div class="flex justify-between items-start">
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                    <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                    <!-- User Conditions for this rule -->
+                                                    <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                                        <span class="text-xs text-gray-500">User Conditions:</span>
+                                                        <ul class="mt-1 space-y-1">
+                                                            <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <button type="button" (click)="removeNewReportRule(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Actual Rules -->
+                                <div *ngIf="hasActualRulesInNewReport()" class="mb-3">
+                                    <h5 class="text-xs font-medium text-gray-600 mb-1">Actual Rules</h5>
+                                    <ul class="space-y-2">
+                                        <li *ngFor="let rule of getActualRulesFromNewReport(); let i = index" class="text-sm bg-gray-50 p-2 rounded shadow-sm">
+                                            <div class="flex justify-between items-start">
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                    <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                    <!-- User Conditions for this rule -->
+                                                    <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                                        <span class="text-xs text-gray-500">User Conditions:</span>
+                                                        <ul class="mt-1 space-y-1">
+                                                            <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <button type="button" (click)="removeNewReportRule(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Calculated Rules -->
+                                <div *ngIf="hasCalculatedRulesInNewReport()" class="mb-3">
+                                    <h5 class="text-xs font-medium text-gray-600 mb-1">Calculated Rules</h5>
+                                    <ul class="space-y-2">
+                                        <li *ngFor="let rule of getCalculatedRulesFromNewReport(); let i = index" class="text-sm bg-gray-50 p-2 rounded shadow-sm">
+                                            <div class="flex justify-between items-start">
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                    <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                    <!-- User Conditions for this rule -->
+                                                    <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                                        <span class="text-xs text-gray-500">User Conditions:</span>
+                                                        <ul class="mt-1 space-y-1">
+                                                            <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <button type="button" (click)="removeNewReportRule(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex justify-end">
-                            <button type="submit" [disabled]="policyForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Create Policy</button>
+                            <button type="button" (click)="onAddReport()" [disabled]="!isReportFormValid()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Report</button>
                         </div>
                     </form>
+                </div>
+            </div>
 
-                    <!-- Add Condition Modal -->
-                    <div *ngIf="showConditionModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                            <button (click)="closeConditionModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
-                            <h3 class="text-lg font-bold mb-4">Add Condition</h3>
-                            <form [formGroup]="conditionForm" (ngSubmit)="onAddCondition()">
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-                                    <select formControlName="propertyType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onPropertyTypeChange()">
-                                        <option value="" disabled>Select property type</option>
-                                        <option *ngFor="let prop of userProperties" [value]="prop.type">{{ prop.name }}</option>
-                                    </select>
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Value</label>
-                                    <select formControlName="value" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="" disabled>Select value</option>
-                                        <option *ngFor="let val of propertyValues" [value]="val.value">{{ val.name }}</option>
-                                    </select>
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" [disabled]="conditionForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Condition</button>
-                                </div>
-                            </form>
+            <!-- Add Rule Modal -->
+            <div *ngIf="showRuleModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 overflow-scroll">
+                <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                    <button (click)="closeRuleModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
+                    <h3 class="text-lg font-bold mb-4">Add Expense Rule</h3>
+                    <form [formGroup]="ruleForm" (ngSubmit)="onAddRule()">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rule Type</label>
+                            <select formControlName="valueType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (ngModelChange)="onRuleTypeChange()">
+                                <option value="" disabled>Select rule type</option>
+                                <option *ngFor="let type of ruleValueTypes" [value]="type.value">{{ type.label }}</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <!-- Add Rule Modal -->
-                    <div *ngIf="showRuleModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 overflow-scroll">
-                        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                            <button (click)="closeRuleModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
-                            <h3 class="text-lg font-bold mb-4">Add Expense Rule</h3>
-                            <form [formGroup]="ruleForm" (ngSubmit)="onAddRule()">
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Rule Type</label>
-                                    <select formControlName="valueType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (ngModelChange)="onRuleTypeChange()">
-                                        <option value="" disabled>Select rule type</option>
-                                        <option *ngFor="let type of ruleValueTypes" [value]="type.value">{{ type.label }}</option>
-                                    </select>
+                        <!-- Constant Value Fields -->
+                        <div class="mb-4" *ngIf="ruleForm.get('valueType')?.value === 'CONSTANT'">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select By</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" formControlName="selectionType" value="expenseType" 
+                                               class="form-radio text-indigo-600" (change)="onSelectionTypeChange()">
+                                        <span class="ml-2">Expense Type</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" formControlName="selectionType" value="expenseCategory" 
+                                               class="form-radio text-indigo-600" (change)="onSelectionTypeChange()">
+                                        <span class="ml-2">Expense Category</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Expense Type Selection -->
+                            <div *ngIf="ruleForm.get('selectionType')?.value === 'expenseType'">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expense Type</label>
+                                <select formControlName="expenseTypeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="" disabled>Select expense type</option>
+                                    <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
+                                </select>
+                                <div class="mt-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                                    <input type="number" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter amount" />
+                                </div>
+                            </div>
+
+                            <!-- Expense Category Selection -->
+                            <div *ngIf="ruleForm.get('selectionType')?.value === 'expenseCategory'">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expense Categories</label>
+                                <div class="space-y-2">
+                                    <div *ngFor="let category of expenseCategories" class="flex items-center">
+                                        <input type="checkbox" [value]="category.id" 
+                                               (change)="onCategorySelection(category, $event)"
+                                               class="form-checkbox h-4 w-4 text-indigo-600">
+                                        <span class="ml-2">{{ category.name }}</span>
+                                    </div>
                                 </div>
 
-                                <!-- Constant Value Fields -->
-                                <div class="mb-4" *ngIf="ruleForm.get('valueType')?.value === 'CONSTANT'">
-                                    <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Select By</label>
-                                        <div class="flex space-x-4">
-                                            <label class="inline-flex items-center">
-                                                <input type="radio" formControlName="selectionType" value="expenseType" 
-                                                       class="form-radio text-indigo-600" (change)="onSelectionTypeChange()">
-                                                <span class="ml-2">Expense Type</span>
-                                            </label>
-                                            <label class="inline-flex items-center">
-                                                <input type="radio" formControlName="selectionType" value="expenseCategory" 
-                                                       class="form-radio text-indigo-600" (change)="onSelectionTypeChange()">
-                                                <span class="ml-2">Expense Category</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <!-- Expense Type Selection -->
-                                    <div *ngIf="ruleForm.get('selectionType')?.value === 'expenseType'">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Type</label>
-                                        <select formControlName="expenseTypeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                            <option value="" disabled>Select expense type</option>
-                                            <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
-                                        </select>
-                                        <div class="mt-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                                            <input type="number" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter amount" />
-                                        </div>
-                                    </div>
-
-                                    <!-- Expense Category Selection -->
-                                    <div *ngIf="ruleForm.get('selectionType')?.value === 'expenseCategory'">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Categories</label>
-                                        <div class="space-y-2">
-                                            <div *ngFor="let category of expenseCategories" class="flex items-center">
-                                                <input type="checkbox" [value]="category.id" 
-                                                       (change)="onCategorySelection(category, $event)"
-                                                       class="form-checkbox h-4 w-4 text-indigo-600">
-                                                <span class="ml-2">{{ category.name }}</span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Selected Categories and their Expense Types -->
-                                        <div *ngIf="selectedCategories.length > 0" class="mt-4">
-                                            <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Categories</h4>
-                                            <div class="space-y-4">
-                                                <div *ngFor="let categoryId of selectedCategories" class="border rounded p-3">
-                                                    <h5 class="font-medium mb-2">{{ getCategoryName(categoryId) }}</h5>
-                                                    <div class="space-y-2">
-                                                        <div *ngFor="let type of getExpenseTypesByCategory(categoryId)" class="flex items-center space-x-2">
-                                                            <span class="text-sm">{{ type.name }}</span>
-                                                            <input type="number" 
-                                                                   [(ngModel)]="categoryAmounts[type.id]"
-                                                                   [ngModelOptions]="{standalone: true}"
-                                                                   class="w-24 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                                   placeholder="Amount">
-                                                        </div>
-                                                    </div>
+                                <!-- Selected Categories and their Expense Types -->
+                                <div *ngIf="selectedCategories.length > 0" class="mt-4">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Categories</h4>
+                                    <div class="space-y-4">
+                                        <div *ngFor="let categoryId of selectedCategories" class="border rounded p-3">
+                                            <h5 class="font-medium mb-2">{{ getCategoryName(categoryId) }}</h5>
+                                            <div class="space-y-2">
+                                                <div *ngFor="let type of getExpenseTypesByCategory(categoryId)" class="flex items-center space-x-2">
+                                                    <span class="text-sm">{{ type.name }}</span>
+                                                    <input type="number" 
+                                                           [(ngModel)]="categoryAmounts[type.id]"
+                                                           [ngModelOptions]="{standalone: true}"
+                                                           class="w-24 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                           placeholder="Amount">
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Actual Value Fields -->
-                                <div class="mb-4" *ngIf="ruleForm.get('valueType')?.value === 'ACTUAL'">
-                                    <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Type</label>
-                                        <select formControlName="expenseTypeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                            <option value="" disabled>Select expense type</option>
-                                            <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="grid grid-cols-3 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                                            <input type="text" value="Actual" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" />
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Operator</label>
-                                            <select formControlName="operator" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                                <option value="" disabled>Select operator</option>
-                                                <option *ngFor="let op of operators" [value]="op.value">{{ op.label }}</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Limit Amount</label>
-                                            <input type="number" formControlName="limitAmount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter limit" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Calculated Value Fields -->
-                                <div class="mb-4" *ngIf="ruleForm.get('valueType')?.value === 'CALCULATED'">
-                                    <div class="mb-4">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Type</label>
-                                        <select formControlName="expenseTypeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                            <option value="" disabled>Select expense type</option>
-                                            <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- User Conditions Section -->
-                                <div class="mb-4">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <label class="block text-sm font-medium text-gray-700">User Conditions</label>
-                                        <button type="button" (click)="openRuleConditionModal()" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">Add User Condition</button>
-                                    </div>
-                                    <div *ngIf="ruleUserConditions.length === 0" class="text-xs text-gray-400">No user conditions added yet.</div>
-                                    <ul *ngIf="ruleUserConditions.length > 0" class="space-y-2">
-                                        <li *ngFor="let cond of ruleUserConditions; let i = index" class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
-                                            <span>
-                                                <span class="font-semibold">{{ getPropertyTypeName(cond.propertyType) }}</span>
-                                                <span class="ml-2">= {{ getPropertyValueName(cond.propertyType, cond.value) }}</span>
-                                            </span>
-                                            <button type="button" (click)="removeRuleUserCondition(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" [disabled]="ruleForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Rule</button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Add Rule User Condition Modal -->
-                    <div *ngIf="showRuleConditionModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                            <button (click)="closeRuleConditionModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
-                            <h3 class="text-lg font-bold mb-4">Add User Condition</h3>
-                            <form [formGroup]="ruleConditionForm" (ngSubmit)="onAddRuleUserCondition()">
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-                                    <select formControlName="propertyType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onRuleConditionPropertyTypeChange()">
-                                        <option value="" disabled>Select property type</option>
-                                        <option *ngFor="let prop of userProperties" [value]="prop.type">{{ prop.name }}</option>
+                        <!-- Actual Value Fields -->
+                        <div class="mb-4" *ngIf="ruleForm.get('valueType')?.value === 'ACTUAL'">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expense Type</label>
+                                <select formControlName="expenseTypeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="" disabled>Select expense type</option>
+                                    <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <input type="text" value="Actual" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Operator</label>
+                                    <select formControlName="operator" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        <option value="" disabled>Select operator</option>
+                                        <option *ngFor="let op of operators" [value]="op.value">{{ op.label }}</option>
                                     </select>
                                 </div>
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Value</label>
-                                    <select formControlName="value" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="" disabled>Select value</option>
-                                        <option *ngFor="let val of ruleConditionPropertyValues" [value]="val.value">{{ val.name }}</option>
-                                    </select>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Limit Amount</label>
+                                    <input type="number" formControlName="limitAmount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter limit" />
                                 </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" [disabled]="ruleConditionForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add User Condition</button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
 
+                        <!-- Calculated Value Fields -->
+                        <div class="mb-4" *ngIf="ruleForm.get('valueType')?.value === 'CALCULATED'">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expense Type</label>
+                                <select formControlName="expenseTypeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="" disabled>Select expense type</option>
+                                    <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- User Conditions Section -->
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-medium text-gray-700">User Conditions</label>
+                                <button type="button" (click)="openRuleConditionModal()" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">Add User Condition</button>
+                            </div>
+                            <div *ngIf="ruleUserConditions.length === 0" class="text-xs text-gray-400">No user conditions added yet.</div>
+                            <ul *ngIf="ruleUserConditions.length > 0" class="space-y-2">
+                                <li *ngFor="let cond of ruleUserConditions; let i = index" class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
+                                    <span>
+                                        <span class="font-semibold">{{ getPropertyTypeName(cond.propertyType) }}</span>
+                                        <span class="ml-2">= {{ getPropertyValueName(cond.propertyType, cond.value) }}</span>
+                                    </span>
+                                    <button type="button" (click)="removeRuleUserCondition(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" [disabled]="ruleForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Rule</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Rule User Condition Modal -->
+            <div *ngIf="showRuleConditionModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+                <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                    <button (click)="closeRuleConditionModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
+                    <h3 class="text-lg font-bold mb-4">Add User Condition</h3>
+                    <form [formGroup]="ruleConditionForm" (ngSubmit)="onAddRuleUserCondition()">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                            <select formControlName="propertyType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onRuleConditionPropertyTypeChange()">
+                                <option value="" disabled>Select property type</option>
+                                <option *ngFor="let prop of userProperties" [value]="prop.type">{{ prop.name }}</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Value</label>
+                            <select formControlName="value" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="" disabled>Select value</option>
+                                <option *ngFor="let val of ruleConditionPropertyValues" [value]="val.value">{{ val.name }}</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" [disabled]="ruleConditionForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add User Condition</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Condition Modal -->
+            <div *ngIf="showConditionModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+                <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                    <button (click)="closeConditionModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
+                    <h3 class="text-lg font-bold mb-4">Add Condition</h3>
+                    <form [formGroup]="conditionForm" (ngSubmit)="onAddCondition()">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                            <select formControlName="propertyType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onPropertyTypeChange()">
+                                <option value="" disabled>Select property type</option>
+                                <option *ngFor="let prop of userProperties" [value]="prop.type">{{ prop.name }}</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Value</label>
+                            <select formControlName="value" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="" disabled>Select value</option>
+                                <option *ngFor="let val of propertyValues" [value]="val.value">{{ val.name }}</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" [disabled]="conditionForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Condition</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -412,6 +516,10 @@ export class PolicyManagementComponent implements OnInit {
     selectedCategories: string[] = [];
     categoryAmounts: Record<string, number> = {};
     expenseCategories: ExpenseCategory[] = [];
+    showReportModal = false;
+    reportForm: FormGroup;
+    newReportRules: ExpenseRule[] = [];
+    currentReport: PolicyReport | null = null;
 
     readonly operators: { value: ComparisonOperator; label: string }[] = [
         { value: '<', label: '<' },
@@ -433,7 +541,6 @@ export class PolicyManagementComponent implements OnInit {
         this.policyForm = this.fb.group({
             name: ['', Validators.required],
             description: ['', Validators.required],
-            frequency: ['MONTHLY', Validators.required],
             conditions: [[]]
         });
 
@@ -456,6 +563,10 @@ export class PolicyManagementComponent implements OnInit {
         this.ruleConditionForm = this.fb.group({
             propertyType: ['', Validators.required],
             value: ['', Validators.required]
+        });
+
+        this.reportForm = this.fb.group({
+            frequency: ['', Validators.required]
         });
     }
 
@@ -491,26 +602,37 @@ export class PolicyManagementComponent implements OnInit {
             const newPolicy: ExpensePolicy = {
                 ...this.policyForm.value,
                 id: Date.now().toString(),
-                rules: this.newRules.map(rule => ({
-                    ...rule,
-                    userConditions: rule.userConditions || []
-                })),
-                conditions: this.newConditions
+                conditions: this.newConditions,
+                rules: [],
+                reports: []
             };
             this.expenseService.addPolicy(newPolicy);
             this.closeModal();
         }
     }
 
+    isFormValid(): boolean {
+        const nameValid = this.policyForm.get('name')?.valid ?? false;
+        const descriptionValid = this.policyForm.get('description')?.valid ?? false;
+        return nameValid && descriptionValid && this.newConditions.length > 0;
+    }
+
     // Expense Rules logic
-    openRuleModal(): void {
+    openRuleModal(policy: ExpensePolicy | null, report: PolicyReport | null = null): void {
         this.showRuleModal = true;
         this.ruleForm.reset({ valueType: 'CONSTANT', amount: 0, formula: '', operator: '<', limitAmount: 0, userConditions: [] });
         this.ruleUserConditions = [];
+        this.selectedPolicy = policy;
+        this.currentReport = report;
+        this.showRuleForm = !!report;
+        console.log('openRuleModal - selectedPolicy:', this.selectedPolicy);
+        console.log('openRuleModal - currentReport:', this.currentReport);
     }
 
     closeRuleModal(): void {
         this.showRuleModal = false;
+        this.showRuleForm = false;
+        console.log('closeRuleModal - selectedPolicy:', this.selectedPolicy);
     }
 
     onRuleTypeChange(): void {
@@ -679,7 +801,21 @@ export class PolicyManagementComponent implements OnInit {
             }
 
             if (newRules.length > 0) {
-                this.newRules.push(...newRules);
+                console.log('onAddRule - selectedPolicy:', this.selectedPolicy);
+                console.log('onAddRule - currentReport:', this.currentReport);
+                
+                if (this.selectedPolicy) {
+                    if (this.currentReport) {
+                        // If we're adding to an existing report
+                        const report = this.selectedPolicy.reports?.find(r => r === this.currentReport);
+                        if (report) {
+                            report.rules.push(...newRules);
+                        }
+                    } else {
+                        // If we're adding to a new report
+                        this.newReportRules.push(...newRules);
+                    }
+                }
                 this.closeRuleModal();
                 this.resetRuleForm();
             }
@@ -702,7 +838,11 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     removeRule(index: number): void {
-        this.newRules.splice(index, 1);
+        if (this.selectedPolicy) {
+            this.selectedPolicy.rules.splice(index, 1);
+        } else if (this.editingPolicy) {
+            this.editingPolicy.rules.splice(index, 1);
+        }
     }
 
     getExpenseTypeName(typeId: string): string {
@@ -792,6 +932,7 @@ export class PolicyManagementComponent implements OnInit {
             formula: '',
             userConditions: []
         });
+        console.log('addReport - selectedPolicy:', this.selectedPolicy);
     }
 
     handleSaveRule(): void {
@@ -829,7 +970,8 @@ export class PolicyManagementComponent implements OnInit {
                 description: policyData.description,
                 frequency: policyData.frequency,
                 conditions: policyData.conditions,
-                rules: []
+                rules: [],
+                reports: []
             };
 
             if (this.editingPolicy) {
@@ -865,34 +1007,29 @@ export class PolicyManagementComponent implements OnInit {
         this.policyForm.patchValue({ conditions });
     }
 
-    isFormValid(): boolean {
-        const policy = this.editingPolicy || this.policyForm.value;
-        return policy.name && policy.description && (policy.conditions?.length || 0) > 0;
-    }
-
     // Rule filtering methods
-    hasConstantRules(policy: ExpensePolicy): boolean {
-        return policy.rules?.some(rule => rule.valueType === 'CONSTANT') || false;
+    hasConstantRules(report: PolicyReport): boolean {
+        return report.rules?.some(rule => rule.valueType === 'CONSTANT') || false;
     }
 
-    hasActualRules(policy: ExpensePolicy): boolean {
-        return policy.rules?.some(rule => rule.valueType === 'ACTUAL') || false;
+    hasActualRules(report: PolicyReport): boolean {
+        return report.rules?.some(rule => rule.valueType === 'ACTUAL') || false;
     }
 
-    hasCalculatedRules(policy: ExpensePolicy): boolean {
-        return policy.rules?.some(rule => rule.valueType === 'CALCULATED') || false;
+    hasCalculatedRules(report: PolicyReport): boolean {
+        return report.rules?.some(rule => rule.valueType === 'CALCULATED') || false;
     }
 
-    getConstantRules(policy: ExpensePolicy): ExpenseRule[] {
-        return policy.rules?.filter(rule => rule.valueType === 'CONSTANT') || [];
+    getConstantRules(report: PolicyReport): ExpenseRule[] {
+        return report.rules?.filter(rule => rule.valueType === 'CONSTANT') || [];
     }
 
-    getActualRules(policy: ExpensePolicy): ExpenseRule[] {
-        return policy.rules?.filter(rule => rule.valueType === 'ACTUAL') || [];
+    getActualRules(report: PolicyReport): ExpenseRule[] {
+        return report.rules?.filter(rule => rule.valueType === 'ACTUAL') || [];
     }
 
-    getCalculatedRules(policy: ExpensePolicy): ExpenseRule[] {
-        return policy.rules?.filter(rule => rule.valueType === 'CALCULATED') || [];
+    getCalculatedRules(report: PolicyReport): ExpenseRule[] {
+        return report.rules?.filter(rule => rule.valueType === 'CALCULATED') || [];
     }
 
     onCategorySelection(category: ExpenseCategory, event: any): void {
@@ -940,5 +1077,89 @@ export class PolicyManagementComponent implements OnInit {
             default:
                 return '';
         }
+    }
+
+    addReport(policy: ExpensePolicy): void {
+        this.selectedPolicy = { ...policy }; // Create a copy of the policy
+        this.showReportModal = true;
+        this.reportForm.reset();
+        this.newReportRules = [];
+        console.log('addReport - selectedPolicy:', this.selectedPolicy);
+    }
+
+    closeReportModal(): void {
+        console.log('closeReportModal - before reset - selectedPolicy:', this.selectedPolicy);
+        this.showReportModal = false;
+        this.selectedPolicy = null;
+        this.newReportRules = [];
+        console.log('closeReportModal - after reset - selectedPolicy:', this.selectedPolicy);
+    }
+
+    onAddReport(): void {
+        console.log('onAddReport - selectedPolicy:', this.selectedPolicy);
+        if (this.isReportFormValid() && this.selectedPolicy) {
+            const newReport: PolicyReport = {
+                frequency: this.reportForm.value.frequency,
+                rules: [...this.newReportRules]
+            };
+            
+            if (!this.selectedPolicy.reports) {
+                this.selectedPolicy.reports = [];
+            }
+            
+            this.selectedPolicy.reports.push(newReport);
+            console.log('onAddReport - after adding report - selectedPolicy:', this.selectedPolicy);
+            
+            // Update the policy in the policies array
+            const index = this.policies.findIndex(p => p.id === this.selectedPolicy?.id);
+            if (index !== -1) {
+                this.policies[index] = { ...this.selectedPolicy };
+                this.policies = [...this.policies]; // Trigger change detection
+                console.log('onAddReport - after updating policies array - selectedPolicy:', this.selectedPolicy);
+            }
+            console.log(this.policies);
+            
+            this.closeReportModal();
+        }
+    }
+
+    removeReport(policy: ExpensePolicy, report: PolicyReport): void {
+        const index = policy.reports.indexOf(report);
+        if (index > -1) {
+            policy.reports.splice(index, 1);
+        }
+    }
+
+    isReportFormValid(): boolean {
+        const frequencyValid = this.reportForm.get('frequency')?.valid ?? false;
+        return frequencyValid && this.newReportRules.length > 0;
+    }
+
+    hasConstantRulesInNewReport(): boolean {
+        return this.newReportRules.some(rule => rule.valueType === 'CONSTANT');
+    }
+
+    hasActualRulesInNewReport(): boolean {
+        return this.newReportRules.some(rule => rule.valueType === 'ACTUAL');
+    }
+
+    hasCalculatedRulesInNewReport(): boolean {
+        return this.newReportRules.some(rule => rule.valueType === 'CALCULATED');
+    }
+
+    getConstantRulesFromNewReport(): ExpenseRule[] {
+        return this.newReportRules.filter(rule => rule.valueType === 'CONSTANT');
+    }
+
+    getActualRulesFromNewReport(): ExpenseRule[] {
+        return this.newReportRules.filter(rule => rule.valueType === 'ACTUAL');
+    }
+
+    getCalculatedRulesFromNewReport(): ExpenseRule[] {
+        return this.newReportRules.filter(rule => rule.valueType === 'CALCULATED');
+    }
+
+    removeNewReportRule(index: number): void {
+        this.newReportRules.splice(index, 1);
     }
 } 

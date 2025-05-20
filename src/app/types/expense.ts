@@ -27,6 +27,7 @@ export interface ExpensePolicy {
     frequency: 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
     conditions: PolicyCondition[];
     rules: ExpenseRule[];
+    reports: PolicyReport[];
 }
 
 export interface ExpenseCategory {
@@ -40,7 +41,8 @@ export interface ExpenseType {
     name: string;
     category: string;
     description?: string;
-    isActive: boolean;
+    is_active: boolean;
+    category_name?: string;
 }
 
 export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED';
@@ -57,6 +59,11 @@ export interface ExpenseReport {
     approvedAt?: string;
     rejectionReason?: string;
     reimbursedAt?: string;
+}
+
+export interface PolicyReport {
+    frequency: 'DAILY' | 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'ANNUALLY';
+    rules: ExpenseRule[];
 }
 
 // Mock Data
@@ -90,63 +97,63 @@ export const mockExpenseTypes: ExpenseType[] = [
         name: 'HQ',
         description: 'Expenses related to headquarters operations',
         category: 'FIELDWORK',
-        isActive: true
+        is_active: true
     },
     {
         id: '2',
         name: 'Ex-HQ',
         description: 'Expenses outside headquarters',
         category: 'FIELDWORK',
-        isActive: true
+        is_active: true
     },
     {
         id: '3',
         name: 'Hill-station',
         description: 'Expenses related to hill station visits',
         category: 'OTHER',
-        isActive: true
+        is_active: true
     },
     {
         id: '4',
         name: 'OS',
         description: 'Expenses related to hill station visits',
         category: 'FIELDWORK',
-        isActive: true
+        is_active: true
     },
     {
         id: '5',
         name: 'Meeting with Accomadation',
         description: 'Expenses related to hill station visits',
         category: 'ADMIN',
-        isActive: true
+        is_active: true
     },
     {
         id: '6',
         name: 'Meeting without Accomadation',
         description: 'Expenses related to hill station visits',
         category: 'ADMIN',
-        isActive: true
+        is_active: true
     },
     {
         id: '7',
-        name: 'Petrol Allownce',
+        name: 'Petrol Allowance',
         description: 'Expenses related to hill station visits',
         category: 'OTHER',
-        isActive: true
+        is_active: true
     },
     {
         id: '8',
         name: 'Miscellanous',
         description: 'Expenses related to hill station visits',
         category: 'OTHER',
-        isActive: true
+        is_active: true
     },
     {
         id: '9',
         name: 'Local conveyance',
         description: 'Expenses related to hill station visits',
         category: 'OTHER',
-        isActive: true
+        is_active: true
     }
 ];
 
@@ -167,11 +174,13 @@ export const mockPolicies: ExpensePolicy[] = [
             amount: 1000,
             userConditions: [],
             conditions: []
-        }]
+        }],
+        reports: []
     },
     {
         "name": "New Policy for ms 1",
         "description": "For ms1",
+        "id": "2",
         "frequency": "DAILY",
         "conditions": [
             {
@@ -245,7 +254,21 @@ export const mockPolicies: ExpensePolicy[] = [
                 "userConditions": []
             }
         ],
-        "id": "3"
+        reports: []
+    },
+    {
+        "name": "Policy for ms3",
+        "description": "des",
+        "frequency": "DAILY",
+        "conditions": [
+            {
+                "propertyType": "ROLE",
+                "value": "EMPLOYEE"
+            }
+        ],
+        "id": "3",
+        "rules": [],
+        "reports": []
     }
 ];
 
