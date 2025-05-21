@@ -1,16 +1,142 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ExpensePolicy, ExpenseReport, ExpenseStatus, mockPolicies, mockExpenses } from '../../types/expense';
+import { ExpenseService } from '../../services/expense.service';
+import { BaseApiService } from 'src/app/services/api/base.api.service';
+import { apiDirectory } from 'src/global';
+
+// Mock expense reports data
+const mockReports: ExpenseReport[] = [
+  {
+    id: '1',
+    date: '2024-05-15',
+    total_amount: 250.00,
+    status: 'APPROVED',
+    policy: '1',
+    frequency: 'DAILY',
+    expenses: [
+      {
+        id: '1',
+        expense_type: '1',
+        amount: 100.00,
+        description: 'Business lunch with client',
+        receipt_file: 'lunch_receipt.pdf',
+      },
+      {
+        id: '2',
+        expense_type: '2',
+        amount: 150.00,
+        description: 'Taxi fare to client meeting',
+        receipt_file: 'taxi_receipt.pdf',
+      }
+    ]
+  },
+  {
+    id: '2',
+    date: '2024-05-10',
+    total_amount: 120.00,
+    status: 'PENDING',
+    policy: '1',
+    frequency : 'DAILY',
+    expenses: [
+      {
+        id: '3',
+        expense_type: '3',
+        amount: 120.00,
+        description: 'Office supplies',
+        receipt_file: 'office_supplies_receipt.pdf',
+      }
+    ]
+  },
+  {
+    id: '3',
+    date: '2024-05-05',
+    total_amount: 350.00,
+    status: 'REJECTED',
+    policy: '1',
+    frequency : 'MONTHLY',
+    expenses: [
+      {
+        id: '4',
+        expense_type: '4',
+        amount: 350.00,
+        description: 'Conference registration',
+        receipt_file: 'conference_receipt.pdf',
+      }
+    ]
+  }
+];
 
 @Component({
-    selector: 'app-expense-reports',
-    template: `
-        <div class="p-4">
-            <h1 class="text-2xl font-bold mb-4">Expense Reports</h1>
-            <mat-card>
-                <mat-card-content>
-                    <p>Expense reports interface will be implemented here</p>
-                </mat-card-content>
-            </mat-card>
-        </div>
-    `
+  selector: 'app-expense-reports',
+  templateUrl: './expense-reports.component.html',
+  styleUrls: ['./expense-reports.component.scss']
 })
-export class ExpenseReportsComponent {} 
+export class ExpenseReportsComponent implements OnInit {
+  displayedColumns: string[] = ['date', 'amount', 'status', 'details'];
+  submittedReports: ExpenseReport[] = [];
+  selectedReport: any | null = null;
+  expenseTypes: Record<string, string> = {};
+
+  constructor(
+    private expenseService: ExpenseService,
+    private baseAPI : BaseApiService
+  )
+     {
+    // Get expense types for display
+    this.expenseService.getExpenseTypes().subscribe(types => {
+      this.expenseTypes = types.reduce((acc, type) => {
+        acc[type.id] = type.name;
+        return acc;
+      }, {} as Record<string, string>);
+    });
+
+    // Subscribe to expenses from service
+    // this.expenseService.expenses$.subscribe(reports => {
+    //   this.submittedReports = reports;
+    //   // Calculate total amount for each report
+    //   this.submittedReports.forEach(report => {
+    //     report.total_amount = report.expenses.reduce((total, item) => total + item.amount, 0);
+    //   });
+    // });
+  }
+
+  getReports(){
+    this.baseAPI.executeGet(
+      {
+        url : apiDirectory.expenseReports
+      }
+    ).subscribe((res : any) => {
+      this.submittedReports = res.results;
+    })
+  }
+
+  viewReportDetails(report: ExpenseReport): void {
+    this.selectedReport = report;
+    console.log(this.selectedReport);
+    this.baseAPI.executeGet({
+      url : apiDirectory.expenseReports + this.selectedReport.id + '/'
+    }).subscribe(
+      (res : any) => {
+        this.selectedReport = res;
+      },
+      (err : any) => {
+        console.log(err);
+      }
+    )
+  }
+
+  closeDetails(): void {
+    this.selectedReport = null;
+  }
+
+  formatDate(date: string): string {
+    return new Date(date).toLocaleDateString();
+  }
+
+  ngOnInit() {
+    // Sort reports by date (newest first)
+    this.getReports();
+  }
+
+
+}
