@@ -45,20 +45,32 @@ export interface ExpenseType {
     category_name?: string;
 }
 
-export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED';
+export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED' | 'SUBMITTED';
+
+export interface ExpenseItem {
+    id?: string;
+    expense_type: string;
+    amount: number;
+    description?: string;
+    receipt_file?: string;
+    name?: string;
+}
 
 export interface ExpenseReport {
-    id: string;
-    employeeId: string;
-    date: string;
-    policyId: string;
-    expenses: any[];
-    status: ExpenseStatus;
-    submittedAt: string;
+    id?: string;
+    date?: string;
+    total_amount: number;
+    frequency : string;
+    status?: ExpenseStatus;
+    policy?: string;
+    expenses: ExpenseItem[];
+    submitted_at?: string;
     approvedBy?: string;
     approvedAt?: string;
     rejectionReason?: string;
     reimbursedAt?: string;
+    from_report_date ?: string,
+    to_report_date ?: string,
 }
 
 export interface PolicyReport {
@@ -159,13 +171,19 @@ export const mockExpenseTypes: ExpenseType[] = [
 
 export const mockPolicies: ExpensePolicy[] = [
     {
-        id: '1',
-        name: 'Standard Travel Policy',
-        description: 'Standard policy for all travel related expenses',
-        frequency: 'MONTHLY',
-        conditions: [
-            { propertyType: 'ROLE', value: 'EMPLOYEE' },
-            { propertyType: 'GRADE', value: 'MS1' }
+        "id": "1",
+        "name": "New Policy for ms 1",
+        "description": "For ms1",
+        "frequency": "DAILY",
+        "conditions": [
+            {
+                "propertyType": "ROLE",
+                "value": "EMPLOYEE"
+            },
+            {
+                "propertyType": "GRADE",
+                "value": "MS1"
+            }
         ],
         rules: [{
             id: '1',
@@ -365,12 +383,13 @@ export interface PolicyCondition {
 
 export interface ExpenseRule {
     id: string;
+    groupId?: string;
     expenseTypeId: string;
     valueType: RuleValueType;
     amount?: number;
-    formula?: string; // For CALCULATED
-    operator?: ComparisonOperator; // For ACTUAL
-    limitAmount?: number; // For ACTUAL
+    formula?: string;
+    operator?: ComparisonOperator;
+    limitAmount?: number;
     userConditions: PolicyCondition[];
     conditions?: PolicyCondition[];
 }

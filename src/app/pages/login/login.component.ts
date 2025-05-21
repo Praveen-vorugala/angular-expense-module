@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../services/expense.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-login',
@@ -56,28 +57,27 @@ import { ExpenseService } from '../../services/expense.service';
     `
 })
 export class LoginComponent {
-    loginForm: FormGroup;
+    loginForm: FormGroup = this.fb.group({
+        email: ['', [Validators.required, Validators.email]]
+    });
 
-    // Mock users matching the React implementation
     mockUsers = [
-        { email: 'admin@example.com', role: 'ADMIN' },
-        { email: 'manager@example.com', role: 'MANAGER' },
-        { email: 'employee@example.com', role: 'EMPLOYEE' }
+        { role: 'Employee', email: 'employee@example.com' },
+        { role: 'Manager', email: 'manager@example.com' },
+        { role: 'Admin', email: 'admin@example.com' }
     ];
 
     constructor(
+        private router: Router,
         private fb: FormBuilder,
         private expenseService: ExpenseService,
-        private router: Router
-    ) {
-        this.loginForm = this.fb.group({
-            email: ['', [Validators.required, Validators.email]]
-        });
-    }
+        private authService: AuthService
+    ) {}
 
     onSubmit(): void {
         if (this.loginForm.valid) {
-            const { email } = this.loginForm.value;
+            const email = this.loginForm.get('email')?.value;
+            this.authService.login(email);
             this.expenseService.login(email).subscribe({
                 next: (user) => {
                     if (user) {
@@ -90,4 +90,4 @@ export class LoginComponent {
             });
         }
     }
-} 
+}

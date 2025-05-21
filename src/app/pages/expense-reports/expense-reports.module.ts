@@ -5,11 +5,13 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ExpenseReportsComponent } from './expense-reports.component';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
     declarations: [ExpenseReportsComponent],
     imports: [
         CommonModule,
+        ReactiveFormsModule,
         MatTableModule,
         MatButtonModule,
         MatCardModule,

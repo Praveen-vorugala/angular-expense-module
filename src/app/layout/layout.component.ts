@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ExpenseService } from '../services/expense.service';
 import { Subscription } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -29,6 +30,13 @@ import { Subscription } from 'rxjs';
              class="hover:bg-gray-50" *ngIf="isEmployee || isManager ">
             <mat-icon class="text-gray-500">receipt</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Submit Expense</span>
+          </a>
+
+            <!-- Reports - Visible to employees -->
+          <a mat-list-item routerLink="/reports" routerLinkActive="active" 
+             class="hover:bg-gray-50" *ngIf="isEmployee ">
+            <mat-icon class="text-gray-500">check_circle</mat-icon>
+            <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Reports</span>
           </a>
 
           <!-- Approve Expenses - Visible to managers and admins -->
