@@ -27,7 +27,7 @@ import { apiDirectory } from 'src/global';
                                     View Policy
                                 </button>
                                 <button (click)="addReport(policy)" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
-                                    Add Report
+                                    Add Report Configuration
                                 </button>
                             </div>
                         </div>
@@ -473,7 +473,10 @@ import { apiDirectory } from 'src/global';
                                                 <p class="font-medium">{{ selectedPolicyDetails.frequency }}</p>
                                             </div>
                                         </div>
+                                        
                                     </div>
+                                    
+
                                 </div>
 
                                 <!-- Conditions -->
@@ -700,10 +703,22 @@ export class PolicyManagementComponent implements OnInit {
         this.getExpenseCategories();
     }
 
-    viewPolicy(policy: any): void {
+    viewPolicy(policy: any,showModal:boolean = true): void {
         this.baseAPI.executeGet({url: `${apiDirectory.getPolicies}${policy.id}/`}).subscribe((data: any) => {
             this.selectedPolicyDetails = data;
-            this.showViewPolicyModal = true;
+            !showModal? this.selectedPolicy = data : this.selectedPolicy = null;
+            if(this.selectedPolicy){
+                if(this.selectedPolicy['reports'].length>0){
+                    this.selectedPolicy['reports'].forEach((report: any) => {
+                        report.rules.forEach((rule: any) => {
+                            rule['expense_type'] = rule['expense_type'].hasOwnProperty('id')? rule['expense_type']['id'] : rule['expense_type'];
+                        })
+                    })
+                }
+            } 
+            console.log(this.selectedPolicy);
+            
+            this.showViewPolicyModal = showModal;
         });
     }
 
@@ -1260,7 +1275,7 @@ export class PolicyManagementComponent implements OnInit {
             case 'CONSTANT':
                 return `Amount: ${rule.amount}`;
             case 'ACTUAL':
-                return `Operator: ${rule.operator} ${rule.amount}`;
+                return `Operator: < ${rule.amount}`;
             case 'CALCULATED':
                 return 'Custom calculated value';
             default:
@@ -1268,8 +1283,9 @@ export class PolicyManagementComponent implements OnInit {
         }
     }
 
-    addReport(policy: ExpensePolicy): void {
-        this.selectedPolicy = { ...policy }; // Create a copy of the policy
+    addReport(policy: any): void {
+        this.viewPolicy(policy,false);
+        // this.selectedPolicy = { ...policy }; // Create a copy of the policy
         this.showReportModal = true;
         this.reportForm.reset();
         this.newReportRules = [];
