@@ -26,6 +26,7 @@ export interface ExpensePolicy {
     description: string;
     frequency: 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
     conditions: PolicyCondition[];
+    condition?: PolicyCondition[];
     rules: ExpenseRule[];
     reports: PolicyReport[];
 }
@@ -164,16 +165,16 @@ export const mockPolicies: ExpensePolicy[] = [
         description: 'Standard policy for all travel related expenses',
         frequency: 'MONTHLY',
         conditions: [
-            { propertyType: 'ROLE', value: 'EMPLOYEE' },
-            { propertyType: 'GRADE', value: 'MS1' }
+            { property_type: 'ROLE', value: 'EMPLOYEE' },
+            { property_type: 'GRADE', value: 'MS1' }
         ],
         rules: [{
-            id: '1',
-            expenseTypeId: '1',
-            valueType: 'CONSTANT',
+            expense_type: 1,
+            rule_type: 'CONSTANT',
             amount: 1000,
-            userConditions: [],
-            conditions: []
+            operator: '<',
+            conditions: [],
+            userConditions: []
         }],
         reports: []
     },
@@ -184,73 +185,77 @@ export const mockPolicies: ExpensePolicy[] = [
         "frequency": "DAILY",
         "conditions": [
             {
-                "propertyType": "ROLE",
+                "property_type": "ROLE",
                 "value": "EMPLOYEE"
             },
             {
-                "propertyType": "GRADE",
+                "property_type": "GRADE",
                 "value": "MS1"
             }
         ],
         "rules": [
             {
-                "id": "1747306007609-1",
-                "expenseTypeId": "1",
-                "valueType": "CONSTANT",
+                "expense_type": 1,
+                "rule_type": "CONSTANT",
                 "amount": 325,
+                "operator": "<",
+                "conditions": [],
                 "userConditions": []
             },
             {
-                "id": "1747306007609-2",
-                "expenseTypeId": "2",
-                "valueType": "CONSTANT",
+                "expense_type": 2,
+                "rule_type": "CONSTANT",
                 "amount": 325,
+                "operator": "<",
+                "conditions": [],
                 "userConditions": []
             },
             {
-                "id": "1747306007609-4",
-                "expenseTypeId": "4",
-                "valueType": "CONSTANT",
+                "expense_type": 4,
+                "rule_type": "CONSTANT",
                 "amount": 800,
+                "operator": "<",
+                "conditions": [],
                 "userConditions": []
             },
             {
-                "id": "1747306007609-5",
-                "expenseTypeId": "5",
-                "valueType": "CONSTANT",
+                "expense_type": 5,
+                "rule_type": "CONSTANT",
                 "amount": 200,
+                "operator": "<",
+                "conditions": [],
                 "userConditions": []
             },
             {
-                "id": "1747306007609-6",
-                "expenseTypeId": "6",
-                "valueType": "CONSTANT",
+                "expense_type": 6,
+                "rule_type": "CONSTANT",
                 "amount": 900,
+                "operator": "<",
+                "conditions": [],
                 "userConditions": []
             },
             {
-                "id": "1747306017967",
-                "expenseTypeId": "8",
-                "valueType": "ACTUAL",
+                "expense_type": 8,
+                "rule_type": "ACTUAL",
+                "amount": 1000,
+                "operator": "<",
+                "conditions": [],
+                "userConditions": []
+            },
+            {
+                "expense_type": 9,
+                "rule_type": "ACTUAL",
+                "amount": 500,
+                "operator": "<",
+                "conditions": [],
+                "userConditions": []
+            },
+            {
+                "expense_type": 7,
+                "rule_type": "CALCULATED",
                 "amount": 0,
                 "operator": "<",
-                "limitAmount": 1000,
-                "userConditions": []
-            },
-            {
-                "id": "1747306031250",
-                "expenseTypeId": "9",
-                "valueType": "ACTUAL",
-                "amount": 0,
-                "operator": "<",
-                "limitAmount": 500,
-                "userConditions": []
-            },
-            {
-                "id": "1747311621860",
-                "expenseTypeId": "7",
-                "valueType": "CALCULATED",
-                "amount": 0,
+                "conditions": [],
                 "userConditions": []
             }
         ],
@@ -262,7 +267,7 @@ export const mockPolicies: ExpensePolicy[] = [
         "frequency": "DAILY",
         "conditions": [
             {
-                "propertyType": "ROLE",
+                "property_type": "ROLE",
                 "value": "EMPLOYEE"
             }
         ],
@@ -315,6 +320,7 @@ export interface PropertyType {
     values: PropertyValue[];
     createdAt: Date;
     updatedAt: Date;
+    url?: string;
 }
 
 export const MOCK_PROPERTIES: PropertyType[] = [
@@ -327,7 +333,8 @@ export const MOCK_PROPERTIES: PropertyType[] = [
             { id: '1-2', value: 'MANAGER', name: 'Manager Role' }
         ],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        url: '/api/auth/roles/'
     },
     {
         id: '2',
@@ -340,7 +347,8 @@ export const MOCK_PROPERTIES: PropertyType[] = [
             { id: '2-4', value: 'MS4', name: 'Grade MS4' }
         ],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        url: '/api/auth/grades/'
     },
     {
         id: '3',
@@ -359,18 +367,15 @@ export type RuleValueType = 'CONSTANT' | 'ACTUAL' | 'CALCULATED';
 export type ComparisonOperator = '<' | '>' | '<=' | '>=';
 
 export interface PolicyCondition {
-    propertyType: string;
-    value: string;
+    property_type: string;
+    value: string | string[];  // Allow both single string and array of strings
 }
 
 export interface ExpenseRule {
-    id: string;
-    expenseTypeId: string;
-    valueType: RuleValueType;
-    amount?: number;
-    formula?: string; // For CALCULATED
-    operator?: ComparisonOperator; // For ACTUAL
-    limitAmount?: number; // For ACTUAL
+    expense_type: number;
+    rule_type: RuleValueType;
+    amount: number;
+    operator: ComparisonOperator;
+    conditions: any[];
     userConditions: PolicyCondition[];
-    conditions?: PolicyCondition[];
 }

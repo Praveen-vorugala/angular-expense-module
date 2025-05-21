@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../services/expense.service';
 import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyCondition, PropertyType, PropertyValue, RuleValueType, ComparisonOperator, PolicyReport } from 'src/app/types/expense';
+import { BaseApiService } from 'src/app/services/api/base.api.service';
+import { apiDirectory } from 'src/global';
 
 @Component({
     selector: 'app-policy-management',
@@ -21,6 +23,9 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                                 <p class="text-sm text-gray-500">{{ policy.description }}</p>
                             </div>
                             <div class="flex gap-2">
+                                <button (click)="viewPolicy(policy)" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
+                                    View Policy
+                                </button>
                                 <button (click)="addReport(policy)" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
                                     Add Report
                                 </button>
@@ -32,101 +37,13 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             <h4 class="text-sm font-medium text-gray-700 mb-2">Policy Conditions</h4>
                             <ul class="space-y-1">
                                 <li *ngFor="let condition of getPolicyConditions(policy)" class="text-sm text-gray-600">
-                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                    <span class="font-semibold">{{ getPropertyTypeName(condition.property_type) }}</span>
+                                    <span class="ml-2">= {{ getPropertyValueNames(condition.property_type, condition.value) }}</span>
                                 </li>
                             </ul>
                         </div>
 
-                        <!-- Policy Reports -->
-                        <div *ngIf="policy.reports && policy.reports.length > 0" class="border-t pt-3">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Reports</h4>
-                            <div class="space-y-4">
-                                <div *ngFor="let report of policy.reports" class="bg-gray-50 p-3 rounded">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <div>
-                                            <h5 class="font-medium">Frequency: {{ report.frequency }}</h5>
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <button (click)="openRuleModal(policy, report)" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">
-                                                Add Rule
-                                            </button>
-                                            <button (click)="removeReport(policy, report)" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
-                                                Remove Report
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Expense Rules -->
-                                    <div *ngIf="report.rules && report.rules.length > 0" class="mt-3">
-                                        <!-- Constant Rules -->
-                                        <div *ngIf="hasConstantRules(report)" class="mb-3">
-                                            <h5 class="text-xs font-medium text-gray-600 mb-1">Constant Rules</h5>
-                                            <ul class="space-y-2">
-                                                <li *ngFor="let rule of getConstantRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                                        <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
-                                                        <!-- User Conditions for this rule -->
-                                                        <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
-                                                            <span class="text-xs text-gray-500">User Conditions:</span>
-                                                            <ul class="mt-1 space-y-1">
-                                                                <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-
-                                        <!-- Actual Rules -->
-                                        <div *ngIf="hasActualRules(report)" class="mb-3">
-                                            <h5 class="text-xs font-medium text-gray-600 mb-1">Actual Rules</h5>
-                                            <ul class="space-y-2">
-                                                <li *ngFor="let rule of getActualRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                                        <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
-                                                        <!-- User Conditions for this rule -->
-                                                        <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
-                                                            <span class="text-xs text-gray-500">User Conditions:</span>
-                                                            <ul class="mt-1 space-y-1">
-                                                                <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-
-                                        <!-- Calculated Rules -->
-                                        <div *ngIf="hasCalculatedRules(report)" class="mb-3">
-                                            <h5 class="text-xs font-medium text-gray-600 mb-1">Calculated Rules</h5>
-                                            <ul class="space-y-2">
-                                                <li *ngFor="let rule of getCalculatedRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
-                                                        <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
-                                                        <!-- User Conditions for this rule -->
-                                                        <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
-                                                            <span class="text-xs text-gray-500">User Conditions:</span>
-                                                            <ul class="mt-1 space-y-1">
-                                                                <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                                    {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        
                     </div>
                 </div>
             </div>
@@ -160,8 +77,8 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                                 <ng-container *ngFor="let cond of newConditions; let i = index;let last = last">
                                     <li class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
                                         <span>
-                                            <span class="font-semibold">{{ getPropertyTypeName(cond.propertyType) }}</span>
-                                            <span class="ml-2">= {{ getPropertyValueName(cond.propertyType, cond.value) }}</span>
+                                            <span class="font-semibold">{{ getPropertyTypeName(cond.property_type) }}</span>
+                                            <span class="ml-2">= {{ getPropertyValueNames(cond.property_type, cond.value) }}</span>
                                         </span>
                                         <button type="button" (click)="removeCondition(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
                                     </li>
@@ -206,14 +123,14 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                                         <li *ngFor="let rule of getConstantRulesFromNewReport(); let i = index" class="text-sm bg-gray-50 p-2 rounded shadow-sm">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex flex-col gap-1">
-                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
                                                     <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
                                                     <!-- User Conditions for this rule -->
                                                     <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
                                                         <span class="text-xs text-gray-500">User Conditions:</span>
                                                         <ul class="mt-1 space-y-1">
                                                             <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                                {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                                {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
                                                             </li>
                                                         </ul>
                                                     </div>
@@ -231,14 +148,14 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                                         <li *ngFor="let rule of getActualRulesFromNewReport(); let i = index" class="text-sm bg-gray-50 p-2 rounded shadow-sm">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex flex-col gap-1">
-                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
                                                     <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
                                                     <!-- User Conditions for this rule -->
                                                     <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
                                                         <span class="text-xs text-gray-500">User Conditions:</span>
                                                         <ul class="mt-1 space-y-1">
                                                             <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                                {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                                {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
                                                             </li>
                                                         </ul>
                                                     </div>
@@ -256,14 +173,14 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                                         <li *ngFor="let rule of getCalculatedRulesFromNewReport(); let i = index" class="text-sm bg-gray-50 p-2 rounded shadow-sm">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex flex-col gap-1">
-                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expenseTypeId) }}</span>
+                                                    <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
                                                     <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
                                                     <!-- User Conditions for this rule -->
                                                     <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
                                                         <span class="text-xs text-gray-500">User Conditions:</span>
                                                         <ul class="mt-1 space-y-1">
                                                             <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
-                                                                {{ getPropertyTypeName(condition.propertyType) }} = {{ getPropertyValueName(condition.propertyType, condition.value) }}
+                                                                {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
                                                             </li>
                                                         </ul>
                                                     </div>
@@ -322,6 +239,9 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                                     <option value="" disabled>Select expense type</option>
                                     <option *ngFor="let type of expenseTypes" [value]="type.id">{{ type.name }}</option>
                                 </select>
+                                <div *ngIf="expenseTypes.length === 0" class="mt-1 text-sm text-gray-500">
+                                    Loading expense types...
+                                </div>
                                 <div class="mt-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                                     <input type="number" formControlName="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter amount" />
@@ -411,8 +331,8 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             <ul *ngIf="ruleUserConditions.length > 0" class="space-y-2">
                                 <li *ngFor="let cond of ruleUserConditions; let i = index" class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
                                     <span>
-                                        <span class="font-semibold">{{ getPropertyTypeName(cond.propertyType) }}</span>
-                                        <span class="ml-2">= {{ getPropertyValueName(cond.propertyType, cond.value) }}</span>
+                                        <span class="font-semibold">{{ getPropertyTypeName(cond.property_type) }}</span>
+                                        <span class="ml-2">= {{ getPropertyValueNames(cond.property_type, cond.value) }}</span>
                                     </span>
                                     <button type="button" (click)="removeRuleUserCondition(i)" class="text-red-500 hover:text-red-700 text-xs">Remove</button>
                                 </li>
@@ -466,16 +386,193 @@ import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyConditi
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Value</label>
-                            <select formControlName="value" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="" disabled>Select value</option>
-                                <option *ngFor="let val of propertyValues" [value]="val.value">{{ val.name }}</option>
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Values</label>
+                            <div class="relative value-dropdown-container">
+                                <div class="relative">
+                                    <input type="text" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                           placeholder="Select values"
+                                           [value]="selectedPropertyValues.length ? selectedPropertyValues.length + ' values selected' : ''"
+                                           readonly
+                                           (click)="toggleValueDropdown()"
+                                           [disabled]="!conditionForm.get('propertyType')?.value">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                        <mat-icon class="text-gray-400">arrow_drop_down</mat-icon>
+                                    </div>
+                                </div>
+                                <!-- Dropdown with checkboxes -->
+                                <div *ngIf="showValueDropdown" 
+                                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                    <div *ngFor="let val of availablePropertyValues" 
+                                         class="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center"
+                                         (click)="toggleValueSelection(val.id)">
+                                        <input type="checkbox" 
+                                               [checked]="selectedPropertyValues.includes(val.value)"
+                                               class="form-checkbox h-4 w-4 text-indigo-600"
+                                               (click)="$event.stopPropagation()"
+                                               (change)="toggleValueSelection(val.id)">
+                                        <span class="ml-2">{{ val.name }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Selected Values as Chips -->
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <div *ngFor="let val of selectedPropertyValues" 
+                                     class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800">
+                                    <span>{{ getPropertyValueNames(conditionForm.get('propertyType')?.value, [val]) }}</span>
+                                    <button type="button" 
+                                            (click)="removeSelectedValue(val)"
+                                            class="ml-2 text-indigo-600 hover:text-indigo-800">
+                                        <mat-icon class="text-sm">close</mat-icon>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div class="flex justify-end">
-                            <button type="submit" [disabled]="conditionForm.invalid" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Condition</button>
+                            <button type="submit" 
+                                    [disabled]="!isConditionFormValid()" 
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">
+                                Add Condition
+                            </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- View Policy Modal -->
+            <div *ngIf="showViewPolicyModal" class="fixed inset-0 z-50 overflow-hidden">
+                <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                <div class="absolute inset-y-0 right-0 w-full max-w-2xl bg-white shadow-xl">
+                    <div class="h-full flex flex-col">
+                        <!-- Header -->
+                        <div class="px-6 py-4 border-b flex justify-between items-center">
+                            <h2 class="text-xl font-bold">Policy Details</h2>
+                            <button (click)="closeViewPolicyModal()" class="text-gray-400 hover:text-gray-600">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 overflow-y-auto p-6">
+                            <div *ngIf="selectedPolicyDetails" class="space-y-6">
+                                <!-- Basic Info -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Basic Information</h3>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p class="text-sm text-gray-600">Name</p>
+                                                <p class="font-medium">{{ selectedPolicyDetails.name }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm text-gray-600">Description</p>
+                                                <p class="font-medium">{{ selectedPolicyDetails.description }}</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm text-gray-600">Frequency</p>
+                                                <p class="font-medium">{{ selectedPolicyDetails.frequency }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Conditions -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Conditions</h3>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <ul class="space-y-2">
+                                            <li *ngFor="let condition of selectedPolicyDetails.condition" class="flex items-center">
+                                                <span class="font-medium">{{ getPropertyTypeName(condition.property_type) }}</span>
+                                                <span class="mx-2">=</span>
+                                                <span>{{ getPropertyValueNames(condition.property_type, condition.value) }}</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Reports -->
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-2">Reports</h3>
+                                    <div class="space-y-4">
+                                        <div *ngFor="let report of selectedPolicyDetails.reports" class="bg-gray-50 p-4 rounded-lg">
+                                            <div class="flex justify-between items-center mb-3">
+                                                <h4 class="font-medium">Frequency: {{ report.frequency }}</h4>
+                                            </div>
+
+                                            <!-- Rules -->
+                                            <div class="space-y-4">
+                                                <!-- Constant Rules -->
+                                                <div *ngIf="hasConstantRules(report)">
+                                                    <h5 class="text-sm font-medium text-gray-600 mb-2">Constant Rules</h5>
+                                                    <ul class="space-y-2">
+                                                        <li *ngFor="let rule of getConstantRules(report)" class="bg-white p-3 rounded shadow-sm">
+                                                            <div class="flex flex-col gap-1">
+                                                                <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
+                                                                <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                                <!-- User Conditions -->
+                                                                <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-2 pl-3 border-l-2 border-gray-200">
+                                                                    <span class="text-xs text-gray-500">User Conditions:</span>
+                                                                    <ul class="mt-1 space-y-1">
+                                                                        <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                            {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
+                                                <!-- Actual Rules -->
+                                                <div *ngIf="hasActualRules(report)">
+                                                    <h5 class="text-sm font-medium text-gray-600 mb-2">Actual Rules</h5>
+                                                    <ul class="space-y-2">
+                                                        <li *ngFor="let rule of getActualRules(report)" class="bg-white p-3 rounded shadow-sm">
+                                                            <div class="flex flex-col gap-1">
+                                                                <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
+                                                                <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                                <!-- User Conditions -->
+                                                                <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-2 pl-3 border-l-2 border-gray-200">
+                                                                    <span class="text-xs text-gray-500">User Conditions:</span>
+                                                                    <ul class="mt-1 space-y-1">
+                                                                        <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                            {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
+                                                <!-- Calculated Rules -->
+                                                <div *ngIf="hasCalculatedRules(report)">
+                                                    <h5 class="text-sm font-medium text-gray-600 mb-2">Calculated Rules</h5>
+                                                    <ul class="space-y-2">
+                                                        <li *ngFor="let rule of getCalculatedRules(report)" class="bg-white p-3 rounded shadow-sm">
+                                                            <div class="flex flex-col gap-1">
+                                                                <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
+                                                                <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                                                <!-- User Conditions -->
+                                                                <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-2 pl-3 border-l-2 border-gray-200">
+                                                                    <span class="text-xs text-gray-500">User Conditions:</span>
+                                                                    <ul class="mt-1 space-y-1">
+                                                                        <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                                                            {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -520,6 +617,11 @@ export class PolicyManagementComponent implements OnInit {
     reportForm: FormGroup;
     newReportRules: ExpenseRule[] = [];
     currentReport: PolicyReport | null = null;
+    selectedPropertyValues: string[] = [];
+    availablePropertyValues: PropertyValue[] = [];
+    showValueDropdown = false;
+    showViewPolicyModal = false;
+    selectedPolicyDetails: any = null;
 
     readonly operators: { value: ComparisonOperator; label: string }[] = [
         { value: '<', label: '<' },
@@ -535,6 +637,7 @@ export class PolicyManagementComponent implements OnInit {
     ];
 
     constructor(
+        private baseAPI: BaseApiService,
         private expenseService: ExpenseService,
         private fb: FormBuilder
     ) {
@@ -571,18 +674,42 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.expenseService.policies$.subscribe(policies => {
-            this.policies = policies;
-        });
-        this.expenseService.expenseTypes$.subscribe(types => {
-            this.expenseTypes = types;
-        });
+        // this.expenseService.policies$.subscribe(policies => {
+        //     this.policies = policies;
+        // });
+        // this.expenseService.expenseTypes$.subscribe(types => {
+        //     this.expenseTypes = types;
+        // });
+        // this.getRoles();
+        // this.getGrades();
+        this.getPolicies();
+        this.getExpenseTypes();
         this.expenseService.getProperties().subscribe(props => {
             this.userProperties = props;
+            this.userProperties.forEach(item =>{
+                if(item.url){
+                    this.baseAPI.executeGet({url: item.url}).subscribe((data: any) => {
+                        item.values = data.results;
+                    })
+                }
+            })
         });
-        this.expenseService.getExpenseCategories().subscribe(categories => {
-            this.expenseCategories = categories;
+        // this.expenseService.getExpenseCategories().subscribe(categories => {
+        //     this.expenseCategories = categories;
+        // });
+        this.getExpenseCategories();
+    }
+
+    viewPolicy(policy: any): void {
+        this.baseAPI.executeGet({url: `${apiDirectory.getPolicies}${policy.id}/`}).subscribe((data: any) => {
+            this.selectedPolicyDetails = data;
+            this.showViewPolicyModal = true;
         });
+    }
+
+    closeViewPolicyModal(): void {
+        this.showViewPolicyModal = false;
+        this.selectedPolicyDetails = null;
     }
 
     openModal(): void {
@@ -597,24 +724,65 @@ export class PolicyManagementComponent implements OnInit {
         this.showModal = false;
     }
 
+    getPolicies():void{
+        this.baseAPI.executeGet({url: apiDirectory.getPolicies}).subscribe((data: any) => {
+            this.policies = data.results;
+            console.log(this.policies);
+            
+        })
+    }
+
+    getExpenseTypes(): void {
+        this.baseAPI.executeGet({url: apiDirectory.expenseTypes}).subscribe((data: any) => {
+            this.expenseTypes = data.results;
+        })
+    }
+
+    getExpenseCategories(): void {
+        this.baseAPI.executeGet({url: apiDirectory.expenseCategories}).subscribe((data: any) => {
+            this.expenseCategories = data.results;
+        })
+    }
+
     onSubmit(): void {
         if (this.policyForm.valid) {
             const newPolicy: ExpensePolicy = {
                 ...this.policyForm.value,
-                id: Date.now().toString(),
                 conditions: this.newConditions,
-                rules: [],
-                reports: []
+                // rules: [],
+                // reports: []
             };
+            this.createPolicy(newPolicy);
             this.expenseService.addPolicy(newPolicy);
             this.closeModal();
+            this.getPolicies();
         }
     }
+
+    getRoles():void{
+        this.baseAPI.executeGet({url: apiDirectory.roles}).subscribe((data: any) => {
+            this.userProperties = data.results;
+        })
+    }
+
+    getGrades():void{
+        this.baseAPI.executeGet({url: apiDirectory.grades}).subscribe((data: any) => {
+            this.userProperties = data.results;
+        })
+    }
+
+    
 
     isFormValid(): boolean {
         const nameValid = this.policyForm.get('name')?.valid ?? false;
         const descriptionValid = this.policyForm.get('description')?.valid ?? false;
         return nameValid && descriptionValid && this.newConditions.length > 0;
+    }
+
+    createPolicy(policy: ExpensePolicy): void {
+        this.baseAPI.executePost({url: apiDirectory.createPolicy, body: policy}).subscribe((data: any) => {
+            console.log('Policy created:', data);
+        });
     }
 
     // Expense Rules logic
@@ -742,61 +910,49 @@ export class PolicyManagementComponent implements OnInit {
     onAddRule(): void {
         if (this.isRuleFormValid()) {
             const ruleData = this.ruleForm.value;
-            const newRules: ExpenseRule[] = [];
+            const newRules: any[] = [];
 
             if (ruleData.valueType === 'CONSTANT' && ruleData.selectionType === 'expenseType') {
                 newRules.push({
-                    id: Date.now().toString(),
-                    expenseTypeId: ruleData.expenseTypeId,
-                    valueType: 'CONSTANT',
+                    expense_type: parseInt(ruleData.expenseTypeId),
+                    rule_type: ruleData.valueType,
                     amount: ruleData.amount,
                     operator: '<',
-                    limitAmount: 0,
-                    formula: '',
-                    userConditions: this.ruleUserConditions,
-                    conditions: []
+                    conditions: [],
+                    userConditions: this.ruleUserConditions
                 });
             } else if (ruleData.valueType === 'CONSTANT' && ruleData.selectionType === 'expenseCategory') {
                 this.selectedCategories.forEach(categoryId => {
                     this.getExpenseTypesByCategory(categoryId).forEach(type => {
                         if (this.categoryAmounts[type.id] !== undefined) {
                             newRules.push({
-                                id: Date.now().toString() + '-' + type.id,
-                                expenseTypeId: type.id,
-                                valueType: 'CONSTANT',
+                                expense_type: parseInt(type.id),
+                                rule_type: ruleData.valueType,
                                 amount: this.categoryAmounts[type.id],
                                 operator: '<',
-                                limitAmount: 0,
-                                formula: '',
-                                userConditions: this.ruleUserConditions,
-                                conditions: []
+                                conditions: [],
+                                userConditions: this.ruleUserConditions
                             });
                         }
                     });
                 });
             } else if (ruleData.valueType === 'ACTUAL') {
                 newRules.push({
-                    id: Date.now().toString(),
-                    expenseTypeId: ruleData.expenseTypeId,
-                    valueType: 'ACTUAL',
-                    amount: 0,
+                    expense_type: parseInt(ruleData.expenseTypeId),
+                    rule_type: ruleData.valueType,
+                    amount: ruleData.limitAmount,
                     operator: ruleData.operator,
-                    limitAmount: ruleData.limitAmount,
-                    formula: '',
-                    userConditions: this.ruleUserConditions,
-                    conditions: []
+                    conditions: [],
+                    userConditions: this.ruleUserConditions
                 });
             } else if (ruleData.valueType === 'CALCULATED') {
                 newRules.push({
-                    id: Date.now().toString(),
-                    expenseTypeId: ruleData.expenseTypeId,
-                    valueType: 'CALCULATED',
+                    expense_type: parseInt(ruleData.expenseTypeId),
+                    rule_type: ruleData.valueType,
                     amount: 0,
                     operator: '<',
-                    limitAmount: 0,
-                    formula: '',
-                    userConditions: this.ruleUserConditions,
-                    conditions: []
+                    conditions: [],
+                    userConditions: this.ruleUserConditions
                 });
             }
 
@@ -845,9 +1001,10 @@ export class PolicyManagementComponent implements OnInit {
         }
     }
 
-    getExpenseTypeName(typeId: string): string {
-        const type = this.expenseTypes.find(t => t.id === typeId);
-        return type ? type.name : typeId;
+    getExpenseTypeName(typeId: string | number | ExpenseType): string {
+        typeId = typeof typeId === 'object' ? typeId.id : typeId;
+        const type = this.expenseTypes.find(t => t.id == typeId);
+        return type ? type.name : typeId.toString();
     }
 
     // Rule user conditions logic
@@ -870,7 +1027,10 @@ export class PolicyManagementComponent implements OnInit {
 
     onAddRuleUserCondition(): void {
         if (this.ruleConditionForm.valid) {
-            this.ruleUserConditions.push({ ...this.ruleConditionForm.value });
+            this.ruleUserConditions.push({
+                property_type: this.ruleConditionForm.get('propertyType')?.value,
+                value: this.ruleConditionForm.get('value')?.value
+            });
             this.closeRuleConditionModal();
         }
     }
@@ -893,24 +1053,56 @@ export class PolicyManagementComponent implements OnInit {
     onPropertyTypeChange(): void {
         const selectedType = this.conditionForm.get('propertyType')?.value;
         const prop = this.userProperties.find(p => p.type === selectedType);
-        this.propertyValues = prop ? prop.values : [];
-        this.conditionForm.get('value')?.setValue('');
+        this.availablePropertyValues = prop ? prop.values : [];
+        this.selectedPropertyValues = []; // Reset selected values when property type changes
     }
 
-    onAddCondition(): void {
-        if (this.conditionForm.valid) {
-            this.newConditions.push({ ...this.conditionForm.value });
-            this.closeConditionModal();
+    toggleValueDropdown(): void {
+        if (this.conditionForm.get('propertyType')?.value) {
+            this.showValueDropdown = !this.showValueDropdown;
         }
     }
 
-    removeCondition(index: number): void {
-        this.newConditions.splice(index, 1);
+    toggleValueSelection(value: string): void {
+        const index = this.selectedPropertyValues.indexOf(value);
+        if (index === -1) {
+            this.selectedPropertyValues.push(value);
+        } else {
+            this.selectedPropertyValues.splice(index, 1);
+        }
+    }
+
+    removeSelectedValue(value: string): void {
+        this.selectedPropertyValues = this.selectedPropertyValues.filter(v => v !== value);
+    }
+
+    isConditionFormValid(): boolean {
+        const propertyTypeValid = this.conditionForm.get('propertyType')?.valid ?? false;
+        return propertyTypeValid && this.selectedPropertyValues.length > 0;
+    }
+
+    onAddCondition(): void {
+        if (this.isConditionFormValid()) {
+            this.newConditions.push({
+                property_type: this.conditionForm.get('propertyType')?.value,
+                value: [...this.selectedPropertyValues]
+            });
+            console.log(this.newConditions);
+            
+            this.closeConditionModal();
+        }
     }
 
     getPropertyTypeName(type: string): string {
         const property = this.userProperties.find(p => p.type === type);
         return property ? property.name : type;
+    }
+
+    getPropertyValueNames(propertyType: string, values: string | string[]): string {
+        if (Array.isArray(values)) {
+            return values.map(value => this.getPropertyValueName(propertyType, value)).join(', ');
+        }
+        return this.getPropertyValueName(propertyType, values);
     }
 
     getPropertyValueName(propertyType: string, value: string): string {
@@ -939,15 +1131,12 @@ export class PolicyManagementComponent implements OnInit {
         if (this.ruleForm.valid) {
             const ruleData = this.ruleForm.value;
             const newRule: ExpenseRule = {
-                id: Date.now().toString(),
-                expenseTypeId: ruleData.expenseTypeId,
-                valueType: ruleData.valueType,
-                amount: ruleData.amount,
-                operator: ruleData.operator,
-                limitAmount: ruleData.limitAmount,
-                formula: ruleData.formula,
-                userConditions: ruleData.userConditions,
-                conditions: []
+                expense_type: parseInt(ruleData.expenseTypeId),
+                rule_type: ruleData.valueType,
+                amount: ruleData.amount || ruleData.limitAmount || 0,
+                operator: ruleData.operator || '<',
+                conditions: [],
+                userConditions: this.ruleUserConditions
             };
 
             if (this.selectedPolicy) {
@@ -1009,27 +1198,27 @@ export class PolicyManagementComponent implements OnInit {
 
     // Rule filtering methods
     hasConstantRules(report: PolicyReport): boolean {
-        return report.rules?.some(rule => rule.valueType === 'CONSTANT') || false;
+        return report.rules?.some(rule => rule.rule_type === 'CONSTANT') || false;
     }
 
     hasActualRules(report: PolicyReport): boolean {
-        return report.rules?.some(rule => rule.valueType === 'ACTUAL') || false;
+        return report.rules?.some(rule => rule.rule_type === 'ACTUAL') || false;
     }
 
     hasCalculatedRules(report: PolicyReport): boolean {
-        return report.rules?.some(rule => rule.valueType === 'CALCULATED') || false;
+        return report.rules?.some(rule => rule.rule_type === 'CALCULATED') || false;
     }
 
-    getConstantRules(report: PolicyReport): ExpenseRule[] {
-        return report.rules?.filter(rule => rule.valueType === 'CONSTANT') || [];
+    getConstantRules(report: PolicyReport): any[] {
+        return report.rules?.filter(rule => rule.rule_type === 'CONSTANT') || [];
     }
 
-    getActualRules(report: PolicyReport): ExpenseRule[] {
-        return report.rules?.filter(rule => rule.valueType === 'ACTUAL') || [];
+    getActualRules(report: PolicyReport): any[] {
+        return report.rules?.filter(rule => rule.rule_type === 'ACTUAL') || [];
     }
 
-    getCalculatedRules(report: PolicyReport): ExpenseRule[] {
-        return report.rules?.filter(rule => rule.valueType === 'CALCULATED') || [];
+    getCalculatedRules(report: PolicyReport): any[] {
+        return report.rules?.filter(rule => rule.rule_type === 'CALCULATED') || [];
     }
 
     onCategorySelection(category: ExpenseCategory, event: any): void {
@@ -1055,7 +1244,7 @@ export class PolicyManagementComponent implements OnInit {
 
     // Helper methods for displaying policy details
     getPolicyConditions(policy: ExpensePolicy): PolicyCondition[] {
-        return policy.conditions || [];
+        return policy.condition || [];
     }
 
     getPolicyRules(policy: ExpensePolicy): ExpenseRule[] {
@@ -1066,12 +1255,12 @@ export class PolicyManagementComponent implements OnInit {
         return rule.userConditions || [];
     }
 
-    getRuleDetails(rule: ExpenseRule): string {
-        switch (rule.valueType) {
+    getRuleDetails(rule: any): string {
+        switch (rule.rule_type) {
             case 'CONSTANT':
                 return `Amount: ${rule.amount}`;
             case 'ACTUAL':
-                return `Operator: ${rule.operator} ${rule.limitAmount}`;
+                return `Operator: ${rule.operator} ${rule.amount}`;
             case 'CALCULATED':
                 return 'Custom calculated value';
             default:
@@ -1118,8 +1307,8 @@ export class PolicyManagementComponent implements OnInit {
                 console.log('onAddReport - after updating policies array - selectedPolicy:', this.selectedPolicy);
             }
             console.log(this.policies);
+            this.updatePolicy()
             
-            this.closeReportModal();
         }
     }
 
@@ -1135,31 +1324,55 @@ export class PolicyManagementComponent implements OnInit {
         return frequencyValid && this.newReportRules.length > 0;
     }
 
+    updatePolicy(): void {
+        if (this.selectedPolicy) {
+            let body = {...this.selectedPolicy};
+            this.selectedPolicy['conditions'] =  this.selectedPolicy['condition']? this.selectedPolicy['condition'] : this.selectedPolicy['conditions'];
+            this.baseAPI.executePost({url: `${apiDirectory.getPolicies}${this.selectedPolicy.id}/update-policy/`, body: this.selectedPolicy}).subscribe((data: any) => {
+                console.log('Policy updated:', data);
+                this.closeReportModal();
+            });
+        }
+    }
+
     hasConstantRulesInNewReport(): boolean {
-        return this.newReportRules.some(rule => rule.valueType === 'CONSTANT');
+        return this.newReportRules.some(rule => rule.rule_type === 'CONSTANT');
     }
 
     hasActualRulesInNewReport(): boolean {
-        return this.newReportRules.some(rule => rule.valueType === 'ACTUAL');
+        return this.newReportRules.some(rule => rule.rule_type === 'ACTUAL');
     }
 
     hasCalculatedRulesInNewReport(): boolean {
-        return this.newReportRules.some(rule => rule.valueType === 'CALCULATED');
+        return this.newReportRules.some(rule => rule.rule_type === 'CALCULATED');
     }
 
     getConstantRulesFromNewReport(): ExpenseRule[] {
-        return this.newReportRules.filter(rule => rule.valueType === 'CONSTANT');
+        return this.newReportRules.filter(rule => rule.rule_type === 'CONSTANT');
     }
 
     getActualRulesFromNewReport(): ExpenseRule[] {
-        return this.newReportRules.filter(rule => rule.valueType === 'ACTUAL');
+        return this.newReportRules.filter(rule => rule.rule_type === 'ACTUAL');
     }
 
     getCalculatedRulesFromNewReport(): ExpenseRule[] {
-        return this.newReportRules.filter(rule => rule.valueType === 'CALCULATED');
+        return this.newReportRules.filter(rule => rule.rule_type === 'CALCULATED');
     }
 
     removeNewReportRule(index: number): void {
         this.newReportRules.splice(index, 1);
+    }
+
+    removeCondition(index: number): void {
+        this.newConditions.splice(index, 1);
+    }
+
+    // Add click outside handler to close dropdown
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent): void {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.value-dropdown-container')) {
+            this.showValueDropdown = false;
+        }
     }
 } 

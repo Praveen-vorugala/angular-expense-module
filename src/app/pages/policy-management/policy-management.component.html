@@ -361,3 +361,94 @@
         </div>
     </div>
 </div>
+<!-- New  -->
+<!-- Policy Reports -->
+<div *ngIf="policy.reports && policy.reports.length > 0" class="border-t pt-3">
+    <h4 class="text-sm font-medium text-gray-700 mb-2">Reports</h4>
+    <div class="space-y-4">
+        <div *ngFor="let report of policy.reports" class="bg-gray-50 p-3 rounded">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h5 class="font-medium">Frequency: {{ report.frequency }}</h5>
+                </div>
+                <div class="flex gap-2">
+                    <button (click)="openRuleModal(policy, report)" class="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs">
+                        Add Rule
+                    </button>
+                    <button (click)="removeReport(policy, report)" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
+                        Remove Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expense Rules -->
+            <div *ngIf="report.rules && report.rules.length > 0" class="mt-3">
+                <!-- Constant Rules -->
+                <div *ngIf="hasConstantRules(report)" class="mb-3">
+                    <h5 class="text-xs font-medium text-gray-600 mb-1">Constant Rules</h5>
+                    <ul class="space-y-2">
+                        <li *ngFor="let rule of getConstantRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
+                            <div class="flex flex-col gap-1">
+                                <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
+                                <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                <!-- User Conditions for this rule -->
+                                <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                    <span class="text-xs text-gray-500">User Conditions:</span>
+                                    <ul class="mt-1 space-y-1">
+                                        <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                            {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Actual Rules -->
+                <div *ngIf="hasActualRules(report)" class="mb-3">
+                    <h5 class="text-xs font-medium text-gray-600 mb-1">Actual Rules</h5>
+                    <ul class="space-y-2">
+                        <li *ngFor="let rule of getActualRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
+                            <div class="flex flex-col gap-1">
+                                <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
+                                <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                <!-- User Conditions for this rule -->
+                                <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                    <span class="text-xs text-gray-500">User Conditions:</span>
+                                    <ul class="mt-1 space-y-1">
+                                        <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                            {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Calculated Rules -->
+                <div *ngIf="hasCalculatedRules(report)" class="mb-3">
+                    <h5 class="text-xs font-medium text-gray-600 mb-1">Calculated Rules</h5>
+                    <ul class="space-y-2">
+                        <li *ngFor="let rule of getCalculatedRules(report)" class="text-sm bg-white p-2 rounded shadow-sm">
+                            <div class="flex flex-col gap-1">
+                                <span class="font-medium">{{ getExpenseTypeName(rule.expense_type) }}</span>
+                                <span class="text-gray-600">{{ getRuleDetails(rule) }}</span>
+                                <!-- User Conditions for this rule -->
+                                <div *ngIf="getRuleUserConditions(rule).length > 0" class="mt-1 pl-2 border-l-2 border-gray-200">
+                                    <span class="text-xs text-gray-500">User Conditions:</span>
+                                    <ul class="mt-1 space-y-1">
+                                        <li *ngFor="let condition of getRuleUserConditions(rule)" class="text-xs text-gray-600">
+                                            {{ getPropertyTypeName(condition.property_type) }} = {{ getPropertyValueNames(condition.property_type, condition.value) }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
