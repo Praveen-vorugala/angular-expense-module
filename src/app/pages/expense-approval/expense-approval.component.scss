@@ -1,0 +1,57 @@
+.overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+}
+
+th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+}
+
+td {
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+tr:hover {
+    background-color: #f9fafb;
+}
+
+// Date column styling
+td:first-child {
+    font-weight: 500;
+    color: #111827;
+}
+
+// Amount column styling
+td:not(:first-child) {
+    text-align: right;
+}
+
+// Responsive adjustments
+@media (max-width: 640px) {
+    th, td {
+        padding: 0.5rem;
+    }
+    
+    .overflow-x-auto {
+        margin: 0 -1rem;
+        padding: 0 1rem;
+    }
+} 
