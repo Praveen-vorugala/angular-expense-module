@@ -8,6 +8,8 @@ const _apiDirectory = {
     "getUserPolicyFrequencies" : "/api/policies/frequencies/user-policy-frequencies/",
     "expenseReports" : "/api/expenses/expense-reports/",
     "expenseSummary": "/api/expenses/expense-reports/get_report_summary/",
+    "getDistance": "/api/policies/distances/get_distance/",
+    "getCities" : "/api/policies/cities/",
 
 }
 
