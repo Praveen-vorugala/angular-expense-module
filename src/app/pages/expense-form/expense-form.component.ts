@@ -53,7 +53,8 @@ export class ExpenseFormComponent implements OnInit {
             description: [''],
             receiptFile: [null],
             fromLocation: [''],
-            toLocation: ['']
+            toLocation: [''],
+            tripType: ['']
         });
 
         // Initialize employeeId and policyId from service
@@ -62,6 +63,7 @@ export class ExpenseFormComponent implements OnInit {
         //     this.currentExpense.employee_id = currentUser.id;
         // }
         this.getPolicyFrequencies();
+        this.getCities();
 
     }
 
@@ -113,13 +115,43 @@ export class ExpenseFormComponent implements OnInit {
        }) 
     }
 
-    calculateDistanceAndAmount(from: string, to: string): void {
+    calculateDistanceAndAmount(from: string, to: string, tripType : string): void {
         // For now, we'll use a mock distance calculation
         // In a real application, you would use a mapping API like Google Maps API
         const mockDistance = 10; // Mock distance in KM
         this.distance = mockDistance;
-        const amount = mockDistance * this.petrolRate;
-        this.expenseForm.get('amount')?.setValue(amount);
+        let params = new Map<string, any>();
+        params.set('source_city_id', from);
+        params.set('destination_city_id', to);
+        this.baseAPI.executeGet({
+            url : apiDirectory.getDistance,
+            params : params
+        }).subscribe(
+            {
+                next : (res)=>{
+                    this.expenseForm.get('amount')?.setValue(tripType === 'ROUND_TRIP' ? res.total_amount * 2 : res.total_amount);
+                },
+                error : (err)=>{
+                    console.log(err);
+                }
+            }
+        )
+    }
+    public cities : any[] = [];
+    getCities(){
+        this.baseAPI.executeGet({
+            url : apiDirectory.getCities
+        }).subscribe({
+            next : (res)=>{
+                const cities = res.results as any;
+                if (cities && cities.length > 0) {
+                    this.cities = cities;
+                }
+            },
+            error : (err)=>{
+                console.log(err);
+            }
+        })
     }
 
     toggleDropdown() {
@@ -158,11 +190,15 @@ export class ExpenseFormComponent implements OnInit {
                     if (this.isPetrolAllowance) {
                         this.expenseForm.get('fromLocation')?.setValidators([Validators.required]);
                         this.expenseForm.get('toLocation')?.setValidators([Validators.required]);
+                        this.expenseForm.get('tripType')?.setValidators([Validators.required]);
                         this.expenseForm.get('amount')?.clearValidators();
                         this.expenseForm.get('amount')?.disable();
                     } else {
                         this.expenseForm.get('fromLocation')?.clearValidators();
                         this.expenseForm.get('toLocation')?.clearValidators();
+                        this.expenseForm.get('tripType')?.clearValidators();
+                        this.expenseForm.get('tripType')?.disable();
+
                         this.expenseForm.get('fromLocation')?.disable();
                         this.expenseForm.get('toLocation')?.disable();
                         this.expenseForm.get('amount')?.setValidators([Validators.required, Validators.min(0)]);
@@ -185,17 +221,35 @@ export class ExpenseFormComponent implements OnInit {
                     }
                 }
             });
+            
+        this.expenseForm.get('tripType')?.valueChanges.subscribe(tripType => {
+            if (tripType) {
+                this.expenseForm.get('tripType')?.markAsDirty();
+                this.expenseForm.get('tripType')?.markAsTouched();
+                this.expenseForm.updateValueAndValidity();
+                
+                // Recalculate amount when trip type changes if we have both locations
+                const fromLocation = this.expenseForm.get('fromLocation')?.value;
+                const toLocation = this.expenseForm.get('toLocation')?.value;
+                const tripType = this.expenseForm.get('tripType')?.value;
+                if (fromLocation && toLocation) {
+                    this.calculateDistanceAndAmount(fromLocation, toLocation, tripType);
+                }
+            }
+        })
 
         // Subscribe to location changes for petrol allowance
         this.expenseForm.get('fromLocation')?.valueChanges.subscribe(from => {
-            if (this.isPetrolAllowance && from && this.expenseForm.get('toLocation')?.value) {
-                this.calculateDistanceAndAmount(from, this.expenseForm.get('toLocation')?.value);
+            const tripType = this.expenseForm.get('tripType')?.value;
+            if (this.isPetrolAllowance && from && this.expenseForm.get('toLocation')?.value && tripType) {
+                this.calculateDistanceAndAmount(from, this.expenseForm.get('toLocation')?.value,tripType);
             }
         });
 
         this.expenseForm.get('toLocation')?.valueChanges.subscribe(to => {
-            if (this.isPetrolAllowance && to && this.expenseForm.get('fromLocation')?.value) {
-                this.calculateDistanceAndAmount(this.expenseForm.get('fromLocation')?.value, to);
+            const tripType = this.expenseForm.get('tripType')?.value;
+            if (this.isPetrolAllowance && to && this.expenseForm.get('fromLocation')?.value && tripType) {
+                this.calculateDistanceAndAmount(this.expenseForm.get('fromLocation')?.value, to,tripType);
             }
         });
     }
@@ -281,26 +335,6 @@ export class ExpenseFormComponent implements OnInit {
                 ...this.currentExpense,
                 frequency : this.selectedFrequency,
             };
-            console.log(expenseReport);
-            const expenseRepor = {
-                "title": "Expense Report",
-                "description": "Monthly expense report for review and approval.",
-                "from_report_date": "2025-05-20",
-                "to_report_date": "2025-05-20",
-                "frequency": "DAILY",
-                "policy": 1,
-                "expenses": [
-                  {
-                    "expense_type": 5,
-                    "amount": 425.00
-                  },
-                  {
-                    "expense_type": 8,
-                    "amount": 1345
-                  }
-                ],
-                "total_amount": 1770
-              }
             this.baseAPI.executePost(
                 {
                     url : apiDirectory.expenseReports,

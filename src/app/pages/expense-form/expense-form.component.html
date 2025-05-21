@@ -8,7 +8,7 @@
                         class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3"
                         (change)="getUserPolicy($event)"
                     >
-                        <option value="" disabled>Select reporting frequency</option>
+                        <option value="" disabled selected>Select reporting frequency</option>
                         <option *ngFor="let freq of policyFrequencies" [value]="freq.name">
                             {{freq.name}}
                         </option>
@@ -25,7 +25,7 @@
             </div>
         </div>
     </div>
-    <div class="bg-white shadow sm:rounded-lg" *ngIf="selectedFrequency">
+    <div class="bg-white shadow sm:rounded-lg" *ngIf="selectedFrequency && fromDate && toDate">
         <div class="px-4 py-5 sm:p-6">
             <form [formGroup]="expenseForm">
                 <div class="space-y-6">
@@ -80,25 +80,44 @@
                             Please enter a valid amount (must be greater than 0)
                         </div>
                     </div>
-
+                    <!-- If petrol allowance user also should select trip type -->
+                    <div class="flex flex-col gap-2" *ngIf="isPetrolAllowance">
+                        <label for="tripType" class="text-sm font-medium text-gray-700">Trip Type</label>
+                        <select id="tripType" name="tripType" formControlName="tripType"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3 bg-white">
+                            <option value="">Select a trip type</option>
+                            <option value="ONE_WAY">One Way</option>
+                            <option value="ROUND_TRIP">Round Trip</option>
+                        </select>
+                        <div *ngIf="expenseForm.get('tripType')?.invalid && expenseForm.get('tripType')?.touched" 
+                             class="mt-1 text-sm text-red-600">
+                            Please select a trip type
+                        </div>
+                    </div>
                     <!-- Location Fields for Petrol Allowance -->
                     <div class="flex flex-col gap-2" *ngIf="isPetrolAllowance">
                         <label for="fromLocation" class="text-sm font-medium text-gray-700">From Location</label>
-                        <input type="text" id="fromLocation" name="fromLocation" formControlName="fromLocation"
-                               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+                        <select id="fromLocation" name="fromLocation" formControlName="fromLocation"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3 bg-white">
+                            <option value="">Select a city</option>
+                            <option *ngFor="let city of cities" [value]="city.id">{{city.name}}</option>
+                        </select>
                         <div *ngIf="expenseForm.get('fromLocation')?.invalid && expenseForm.get('fromLocation')?.touched" 
                              class="mt-1 text-sm text-red-600">
-                            Please enter the starting location
+                            Please select a starting location
                         </div>
                     </div>
 
                     <div class="flex flex-col gap-2" *ngIf="isPetrolAllowance">
                         <label for="toLocation" class="text-sm font-medium text-gray-700">To Location</label>
-                        <input type="text" id="toLocation" name="toLocation" formControlName="toLocation"
-                               class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+                        <select id="toLocation" name="toLocation" formControlName="toLocation"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3 bg-white">
+                            <option value="">Select a city</option>
+                            <option *ngFor="let city of cities" [value]="city.id">{{city.name}}</option>
+                        </select>
                         <div *ngIf="expenseForm.get('toLocation')?.invalid && expenseForm.get('toLocation')?.touched" 
                              class="mt-1 text-sm text-red-600">
-                            Please enter the destination location
+                            Please select a destination location
                         </div>
                     </div>
 
@@ -107,9 +126,9 @@
                         <div class="mt-1 p-3 bg-gray-50 rounded-md border border-gray-300">
                             ₹{{expenseForm.get('amount')?.value || 0 | number:'1.2-2'}}
                         </div>
-                        <div class="text-sm text-gray-500">
+                        <!-- <div class="text-sm text-gray-500">
                             Distance: {{distance}} KM (Rate: ₹{{petrolRate}}/KM)
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- Description -->

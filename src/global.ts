@@ -6,7 +6,9 @@ const _apiDirectory = {
     "roles":"/api/policies/roles/",
     "grades":"/api/policies/grades/",    "getUserPolicy" : "/api/policies/policies/user-policies/",
     "getUserPolicyFrequencies" : "/api/policies/frequencies/user-policy-frequencies/",
-    "expenseReports" : "/api/expenses/expense-reports/"
+    "expenseReports" : "/api/expenses/expense-reports/",
+    "getDistance": "/api/policies/distances/get_distance/",
+    "getCities" : "/api/policies/cities/",
 
 }
 
