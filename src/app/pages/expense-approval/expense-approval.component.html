@@ -1,12 +1,13 @@
 <div class="p-4">
     <h1 class="text-2xl font-bold mb-4">Expense Approval</h1>
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-            <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onFrequencyChange($event)">
-                <option value="" disabled>Select frequency</option>
-                <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
-            </select>
-        </div>
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+        <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onFrequencyChange($event)">
+            <option value="" disabled>Select frequency</option>
+            <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
+        </select>
+    </div>
+
     <!-- Dynamic Table -->
     <div class="overflow-x-auto">
         <table class="min-w-full bg-white border border-gray-200">
@@ -28,49 +29,41 @@
                     </td>
                     <td *ngFor="let column of columns" 
                         class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <!-- L1 Status Column -->
-                        <ng-container *ngIf="chekStatusFields(column,date)">
+                        <!-- Approval Level Columns -->
+                        <ng-container *ngIf="chekStatusFields(column, date)">
                             <div class="flex space-x-2">
-                                <span [ngClass]="getStatusClass(getApprovalStatus(date,column))" 
+                                <span [ngClass]="getStatusClass(getApprovalStatus(date, column))" 
                                     class="px-2 py-1 rounded-full text-xs font-medium">
-                                    {{getApprovalStatus(date,column)}}
+                                    {{getApprovalStatus(date, column)}}
                                 </span>
-                                <button (click)="approveStatus(date,column)" 
-                                        [disabled]="getApprovalStatus(date,column) !== 'IN REVIEW'"
+                                <button (click)="approveStatus(date, column)" 
+                                        [disabled]="getApprovalStatus(date, column) !== 'IN_REVIEW'"
                                         class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                     Approve
                                 </button>
-                                <button (click)="rejectStatus(date,column)"
-                                        [disabled]="getApprovalStatus(date,column) !== 'IN REVIEW'"
+                                <button (click)="rejectStatus(date, column)"
+                                        [disabled]="getApprovalStatus(date, column) !== 'IN_REVIEW'"
                                         class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                     Reject
                                 </button>
-                                
                             </div>
                         </ng-container>
 
                         <!-- Regular Columns -->
-                        <ng-container *ngIf="!chekStatusFields(column,date)">
+                        <ng-container *ngIf="!chekStatusFields(column, date)">
                             <div class="flex items-center justify-between">
-                                <span>{{getExpenseValue(date, column)}}</span>
-                                <div class="flex space-x-2 ml-2">
-                                    <!-- Attachment Icon -->
-                                    <span *ngIf="hasAttachments(date, column)" 
-                                          class="text-blue-500 cursor-pointer"
-                                          title="Has attachments">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
-                                    </span>
-                                    <!-- History Icon -->
-                                    <span *ngIf="hasHistory(date, column)" 
-                                          class="text-gray-500 cursor-pointer"
-                                          title="Has history">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </span>
-                                </div>
+                                <!-- Editable Amount -->
+                                <ng-container *ngIf="isEditable(date, column)">
+                                    <input type="number" 
+                                           [value]="getExpenseValue(date, column)"
+                                           (input)="onAmountChange(date, column, $any($event.target).value)"
+                                           class="w-24 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                           step="0.01">
+                                </ng-container>
+                                <!-- Non-editable Amount -->
+                                <ng-container *ngIf="!isEditable(date, column)">
+                                    <span>{{getExpenseValue(date, column)}}</span>
+                                </ng-container>
                             </div>
                         </ng-container>
                         <span *ngIf="getOverallStatus(date) && column == 'overall_status';" [ngClass]="getStatusClass(getOverallStatus(date))" 
@@ -84,4 +77,12 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Save Changes Button -->
+    <!-- <div class="mt-4 flex justify-end" *ngIf="changedExpenses.length > 0">
+        <button (click)="saveChanges()"
+                class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+            Save Changes
+        </button>
+    </div> -->
 </div> 

@@ -748,7 +748,10 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     getExpenseTypes(): void {
-        this.baseAPI.executeGet({url: apiDirectory.expenseTypes}).subscribe((data: any) => {
+        const params =  new Map<string, string>();
+        params.set('is_active', 'true');
+        params.set('page_size', '40');
+        this.baseAPI.executeGet({url: apiDirectory.expenseTypes,params:params}).subscribe((data: any) => {
             this.expenseTypes = data.results;
         })
     }

@@ -5,17 +5,31 @@ import {
   HttpEvent,
   HttpInterceptor
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable, take } from 'rxjs';
+import { AuthService } from './auth.service';
+import { ExpenseService } from './expense.service';
 
 @Injectable()
 export class HttpInterceptorInterceptor implements HttpInterceptor {
+  public token:string ='';
 
-  constructor() {}
+  constructor(
+    private expenseService: ExpenseService,
+  ) {
+    
+  }
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const modifiedReq = request.clone({
-      headers: request.headers.set('Authorization', 'Token e42a6af166b9e91654b869197f9279365f7ba9c6'),
+    this.expenseService.currentUser$.pipe(
+      take(1),
+      map((user:any) => {
+        console.log("Interceptor",user);
+        
+       this.token = user.token
+      }))
+   const modifiedReq = request.clone({
+      headers: request.headers.set('Authorization', 'Token '+ this.token),
     });
-    return next.handle(modifiedReq);
+    return next.handle(this.token? modifiedReq:request);
   }
 }

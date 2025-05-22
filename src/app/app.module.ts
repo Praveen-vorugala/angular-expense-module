@@ -9,6 +9,7 @@ import { HttpInterceptorInterceptor } from './services/http-interceptor.intercep
 import { ExpenseReportsComponent } from './pages/expense-reports/expense-reports.component';
 import { AuthService } from './services/auth.service';
 import { LayoutModule } from './layout/layout.module';
+import { PopOverService } from './services/pop-over/pop-over.service';
 
 @NgModule({
     declarations: [
@@ -25,6 +26,7 @@ import { LayoutModule } from './layout/layout.module';
     ],
     providers: [
         AuthService,
+        PopOverService,
         { provide: HTTP_INTERCEPTORS, useClass: HttpInterceptorInterceptor, multi: true },
     ],
     bootstrap: [AppComponent]

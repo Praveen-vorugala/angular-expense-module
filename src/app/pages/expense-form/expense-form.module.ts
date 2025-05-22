@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { ExpenseFormComponent } from './expense-form.component';
 
 @NgModule({
@@ -19,6 +20,7 @@ import { ExpenseFormComponent } from './expense-form.component';
         MatSelectModule,
         MatButtonModule,
         MatCardModule,
+        MatSnackBarModule,
         RouterModule.forChild([
             {
                 path: '',

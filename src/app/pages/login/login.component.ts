@@ -3,6 +3,8 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../services/expense.service';
 import { AuthService } from '../../services/auth.service';
+import { BaseApiService } from 'src/app/services/api/base.api.service';
+import { apiDirectory } from 'src/global';
 
 @Component({
     selector: 'app-login',
@@ -41,6 +43,20 @@ import { AuthService } from '../../services/auth.service';
                             </div>
                         </div>
                     </div>
+                    <!-- <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="email" class="sr-only">Password</label>
+                            <input
+                                id="password"                                
+                                name="password"
+                                type="password"
+                                formControlName="password"
+                                required
+                                placeholder="Password"
+                                class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                            />
+                        </div>
+                    </div> -->
 
                     <div>
                         <button
@@ -58,36 +74,51 @@ import { AuthService } from '../../services/auth.service';
 })
 export class LoginComponent {
     loginForm: FormGroup = this.fb.group({
-        email: ['', [Validators.required, Validators.email]]
+        email: ['', [Validators.required, Validators.email]],
+        password: ['',]
     });
 
     mockUsers = [
-        { role: 'Employee', email: 'employee@example.com' },
-        { role: 'Manager', email: 'manager@example.com' },
-        { role: 'Admin', email: 'admin@example.com' }
+        { role: 'Employee', email: 'balaji.pagadala@adjoint.in',password:'Ba@123456' },
+        { role: 'Manager', email: 'phgani@adjoint.in',password:'Ph@123456' },
+        { role: 'Admin', email: 'praveen@adjoint.in',password:'Pr@123456' }
     ];
 
     constructor(
         private router: Router,
         private fb: FormBuilder,
+        private baseAPI: BaseApiService,
         private expenseService: ExpenseService,
         private authService: AuthService
     ) {}
 
     onSubmit(): void {
         if (this.loginForm.valid) {
-            const email = this.loginForm.get('email')?.value;
-            this.authService.login(email);
-            this.expenseService.login(email).subscribe({
-                next: (user) => {
-                    if (user) {
-                        // Store user data in localStorage
-                        localStorage.setItem('user', JSON.stringify(user));
-                        // Navigate to the root path which will show the dashboard
-                        this.router.navigate(['/']);
-                    }
-                }
-            });
+            // const email = this.loginForm.get('email')?.value;
+            // this.authService.login(email);
+            // this.expenseService.login(email).subscribe({
+            //     next: (user) => {
+            //         if (user) {
+            //             // Store user data in localStorage
+            //             localStorage.setItem('user', JSON.stringify(user));
+            //             // Navigate to the root path which will show the dashboard
+            //             this.router.navigate(['/']);
+            //         }
+            //     }
+            // });
+            this.loginForm.get('password')?.setValue(this.mockUsers.find(user => user.email === this.loginForm.get('email')?.value)?.password);
+            const body ={...this.loginForm.value};
+            this.baseAPI.executePost({url: apiDirectory.login, body:body }).subscribe(res => {
+                console.log('Login successful:', res);
+                // Store user data in localStorage
+                this.expenseService.login(res).subscribe(user =>{
+                    console.log(user);
+                    
+                });
+                localStorage.setItem('user', JSON.stringify(res));
+                // Navigate to the root path which will show the dashboard
+                this.router.navigate(['/dashboard']);
+            })
         }
     }
 }

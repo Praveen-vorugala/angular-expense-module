@@ -48,13 +48,13 @@ export class ExpenseService {
 
     constructor() {}
 
-    login(email: string): Observable<any> {
-        const user = mockUsers.find(u => u.email === email);
-        if (user) {
+    login(user: any): Observable<any> {
+        // const user = mockUsers.find(u => u.email === email);
+        // if (user) {
             this.currentUserSubject.next(user);
             return of(user);
-        }
-        return of(null);
+        // }
+        // return of(null);
     }
 
     logout(): void {

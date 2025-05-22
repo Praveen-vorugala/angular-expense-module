@@ -5,21 +5,40 @@ import { apiDirectory } from 'src/global';
 
 interface MetaData {
     attachments: string;
-    history: string | string[];
+    history: string[];
 }
 
 interface ExpenseValue {
-    value: number;
-    meta: MetaData;
+    amount: number | string;
+    attachments: string;
+    history: string[];
+    id?: number;
+    original_amount?: number;
 }
 
-type Status = 'IN REVIEW' | 'APPROVED' | 'REJECTED';
+interface ApprovalLevel {
+    id: number;
+    approval_level: number;
+    status: string;
+    comments: string;
+    approved_at: string | null;
+    created_at: string;
+    updated_at: string;
+    expense_report: number;
+    approver: number;
+}
 
 interface ExpenseConfig {
     [date: string]: {
-        [key: string]: ExpenseValue | string | any;
-        status: Status;
+        [key: string]: ExpenseValue | ApprovalLevel | string| any;
+        overall_status: string;
     };
+}
+
+interface ExpenseChange {
+    id: number;
+    amount: number;
+    previous_amount: number;
 }
 
 @Component({
@@ -30,15 +49,11 @@ interface ExpenseConfig {
 export class ExpenseApprovalComponent implements OnInit {
     frequencyOptions = [
         { value: 'DAILY', label: 'Daily' },
-        // { value: 'WEEKLY', label: 'Weekly' },
-        // { value: 'FORTNIGHTLY', label: 'Fortnightly' },
-        { value: 'MONTHLY', label: 'Monthly' },
-        // { value: 'QUARTERLY', label: 'Quarterly' },
-        // { value: 'HALF_YEARLY', label: 'Half Yearly' },
-        // { value: 'ANNUALLY', label: 'Annually' }
+        { value: 'MONTHLY', label: 'Monthly' }
     ];
-    frequency:FormControl = new FormControl('DAILY');
+    frequency: FormControl = new FormControl('DAILY');
     expenseConfig: ExpenseConfig[] = [];
+    changedExpenses: ExpenseChange[] = [];
 
     dates: string[] = [];
     columns: string[] = [];
@@ -46,36 +61,42 @@ export class ExpenseApprovalComponent implements OnInit {
     constructor(private baseAPI: BaseApiService) {}
 
     ngOnInit() {
-        
         this.getExpensConfiguration();
     }
 
     private initializeTable() {
-        // Get all dates from all config objects
         this.dates = this.expenseConfig
             .map(config => Object.keys(config))
             .flat()
             .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
         
-        // Get all unique column names (expense types)
         const columnSet = new Set<string>();
         this.expenseConfig.forEach(config => {
             Object.values(config).forEach(dateConfig => {
                 Object.keys(dateConfig).forEach(key => {
-                    if (key !== 'status') { // Exclude status from columns
+                    // if (key !== 'overall_status') {
                         columnSet.add(key);
-                    }
+                    // }
                 });
             });
         });
         this.columns = Array.from(columnSet);
     }
 
-    getExpensConfiguration(){
-        this.baseAPI.executeGet({url: apiDirectory.expenseSummary}).subscribe(res =>{
+    getExpensConfiguration() {
+        this.baseAPI.executeGet({url: apiDirectory.expenseSummary}).subscribe(res => {
             this.expenseConfig = res;
+            this.expenseConfig.forEach(config => {
+                Object.values(config).forEach(dateConfig => {
+                    Object.entries(dateConfig).forEach(([key, value]) => {
+                        if (typeof value !== 'string' && 'amount' in value && 'id' in value) {
+                            value.original_amount = parseFloat(value.amount.toString());
+                        }
+                    });
+                });
+            });
             this.initializeTable();
-        })
+        });
     }
 
     getExpenseValue(date: string, column: string): any {
@@ -84,46 +105,85 @@ export class ExpenseApprovalComponent implements OnInit {
         
         const value = config[date][column];
         if (typeof value === 'string') return null;
-        return value?.amount || 0;
-    }
-
-    chekStatusFields(column:string,date:string) {
-        const config = this.expenseConfig.find(c =>c[date]);
-        if (config) {
-            return config?.[date][column].status? true : false;
+        if ('amount' in value) {
+            return value.amount || 0;
         }
-        return null;
+        return 0;
     }
 
-    getMetaData(date: string, column: string): MetaData | null {
+    isEditable(date: string, column: string): boolean {
         const config = this.expenseConfig.find(c => c[date]);
-        if (!config) return null;
+        if (!config) return false;
         
         const value = config[date][column];
-        if (typeof value === 'string') return null;
-        return value?.meta || null;
+        if (typeof value === 'string') return false;
+        return 'id' in value && 'amount' in value;
     }
 
-    getStatus(date: string): Status {
-        const config:any = this.expenseConfig.find(c => c[date]);
-        return config?.[date]?.status || 'PENDING';
+    onAmountChange(date: string, column: string, newAmount: string) {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (!config) return;
+
+        const value = config[date][column];
+        if (typeof value === 'string' || !('id' in value) || !('amount' in value)) return;
+
+        const currentAmount = parseFloat(newAmount);
+        const originalAmount = value.original_amount || parseFloat(value.amount.toString());
+
+        if (currentAmount !== originalAmount && value.id) {
+            // Remove any existing change for this expense
+            this.changedExpenses = this.changedExpenses.filter(e => e.id !== value.id);
+            
+            // Add new change with original amount from backend
+            this.changedExpenses.push({
+                id: value.id,
+                amount: currentAmount,
+                previous_amount: originalAmount
+            });
+
+            // Update the value in the config
+            value.amount = currentAmount;
+        }
+        console.log(this.changedExpenses);
+        
     }
 
-    getOverallStatus(date: string):Status{
-        const config:any = this.expenseConfig.find(c => c[date]);
-        return config?.[date]?.['overall_status'] || 'PENDING';
-    }
-
-    getApprovalStatus(date: string,column:string): Status {
+    chekStatusFields(column: string, date: string): boolean {
         const config = this.expenseConfig.find(c => c[date]);
         if (config) {
-            console.log(config[date][column]);
-            return config[date][column].status.toUpperCase() as Status;
+            const value = config[date][column];
+            console.log(config,date,column,value);
+            
+            if (typeof value === 'string') return false;
+            return 'status' in value;
+
         }
-        return 'IN REVIEW';
+        return false;
     }
 
-    getStatusClass(status: Status): string {
+    getStatus(date: string): string {
+        const config: any = this.expenseConfig.find(c => c[date]);
+        return config?.[date]?.status || 'IN_REVIEW';
+    }
+
+    getOverallStatus(date: string): string {
+        const config: any = this.expenseConfig.find(c => c[date]);
+        return config?.[date]?.['overall_status'] || 'IN_REVIEW';
+    }
+
+    getApprovalStatus(date: string, column: string): string {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            const value = config[date][column];
+            if (typeof value === 'string') return 'IN_REVIEW';
+            if ('status' in value) {
+                return value.status.toUpperCase();
+            }
+        }
+        return 'IN_REVIEW';
+    }
+
+    getStatusClass(status: string): string {
         switch (status) {
             case 'APPROVED':
                 return 'bg-green-100 text-green-800';
@@ -134,31 +194,62 @@ export class ExpenseApprovalComponent implements OnInit {
         }
     }
 
-    hasAttachments(date: string, column: string): boolean {
-        const meta = this.getMetaData(date, column);
-        return meta?.attachments ? true : false;
-    }
-
-    hasHistory(date: string, column: string): boolean {
-        const meta = this.getMetaData(date, column);
-        return meta?.history ? true : false;
-    }
-
-    approveStatus(date: string,column:string) {
+    approveStatus(date: string, column: string) {
         const config = this.expenseConfig.find(c => c[date]);
         if (config) {
-            config[date][column].status = 'APPROVED';
+            let body:any = {};
+            body['expenses'] = [...this.changedExpenses];
+            this.baseAPI.executePost({url: `${apiDirectory.approveExpenses}${config[date][column]['id']+'/approve/' }`, body:body }).subscribe(res => {
+                console.log('Status updated:', res);
+                const value = config[date][column];
+                if (typeof value === 'string') return;
+                if ('status' in value) {
+                    value.status = 'APPROVED';
+                }
+            })
+            
+        }
+    }
+
+    rejectStatus(date: string, column: string) {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            // const value = config[date][column];
+            // if (typeof value === 'string') return;
+            // if ('status' in value) {
+            //     value.status = 'REJECTED';
+            // }
+            let body ={};
+            this.baseAPI.executePost({url: `${apiDirectory.approveExpenses}${config[date][column]['id']+'/reject/' }`, body:body }).subscribe(res => {
+                console.log('Status updated:', res);
+                const value = config[date][column];
+                if (typeof value === 'string') return;
+                if ('status' in value) {
+                    value.status = 'REJECTED';
+                }
+            })
+
         }
     }
 
     onFrequencyChange(event: any) {
-        console.log(event.target.value)
+        console.log(event.target.value);
+        // Implement frequency change logic
     }
 
-    rejectStatus(date: string,column:string) {
-        const config = this.expenseConfig.find(c => c[date]);
-        if (config) {
-            config[date][column].status = 'REJECTED';
+    saveChanges() {
+        if (this.changedExpenses.length > 0) {
+            const payload = {
+                expenses: this.changedExpenses
+            };
+            this.baseAPI.executePost({
+                url: apiDirectory.expenseSummary,
+                body: payload
+            }).subscribe(response => {
+                console.log('Changes saved:', response);
+                this.changedExpenses = []; // Clear changes after successful save
+                this.getExpensConfiguration();
+            });
         }
     }
 } 

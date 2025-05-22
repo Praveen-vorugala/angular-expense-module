@@ -34,7 +34,7 @@ import { AuthService } from '../services/auth.service';
 
             <!-- Reports - Visible to employees -->
           <a mat-list-item routerLink="/reports" routerLinkActive="active" 
-             class="hover:bg-gray-50" *ngIf="isEmployee ">
+             class="hover:bg-gray-50" *ngIf="isEmployee ||isManager ">
             <mat-icon class="text-gray-500">check_circle</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Reports</span>
           </a>
@@ -142,11 +142,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.userSubscription = this.expenseService.currentUser$.subscribe(user => {
+    this.userSubscription = this.expenseService.currentUser$.subscribe((user:any) => {
       if (user) {
-        this.isAdmin = user.role === 'ADMIN';
-        this.isManager = user.role === 'MANAGER';
-        this.isEmployee = user.role === 'EMPLOYEE';
+        this.isAdmin = user.user.role.code === 'ADMIN';
+        this.isManager = user.user.role.code === 'MANAGER';
+        this.isEmployee = user.user.role.code === 'EMPLOYEE';
       } else {
         this.isAdmin = false;
         this.isManager = false;

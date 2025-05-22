@@ -10,7 +10,8 @@ const _apiDirectory = {
     "expenseSummary": "/api/expenses/expense-reports/get_report_summary/",
     "getDistance": "/api/policies/distances/get_distance/",
     "getCities" : "/api/policies/cities/",
-
+    "approveExpenses":"/api/expenses/expense-approvals/",
+    "login":"/api/auth/login/",
 }
 
 export const apiDirectory = _apiDirectory;

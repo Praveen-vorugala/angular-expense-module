@@ -8,6 +8,7 @@ import { ExpenseService } from '../../services/expense.service';
 import { ExpenseType, User, ExpensePolicy, ExpenseItem, ExpenseReport } from '../../types/expense';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
+import { PopOverService } from 'src/app/services/pop-over/pop-over.service';
 
 @Component({
     selector: 'app-expense-form',
@@ -45,6 +46,7 @@ export class ExpenseFormComponent implements OnInit {
         private fb: FormBuilder,
         private expenseService: ExpenseService,
         private router: Router,
+        private popover: PopOverService,
         private baseAPI : BaseApiService
     ) {
         this.expenseForm = this.fb.group({
@@ -64,18 +66,19 @@ export class ExpenseFormComponent implements OnInit {
         // }
         this.getPolicyFrequencies();
         this.getCities();
-
+        this.getUserPolicy('DAILY');
     }
 
     setFromDate(event : Event){
         this.fromDate = (event.target as HTMLInputElement).value;
         this.currentExpense.from_report_date = this.fromDate;
+        this.currentExpense.to_report_date = this.fromDate;
     }
     
-    setToDate(event : Event){
-        this.toDate = (event.target as HTMLInputElement).value;
-        this.currentExpense.to_report_date = this.toDate;
-    }
+    // setToDate(event : Event){
+    //     this.toDate = (event.target as HTMLInputElement).value;
+    //     this.currentExpense.to_report_date = this.toDate;
+    // }
     
     getPolicyFrequencies(){
         this.baseAPI.executeGet({
@@ -94,16 +97,18 @@ export class ExpenseFormComponent implements OnInit {
     }
 
     getUserPolicy(frequencyId : any){
-        this.selectedFrequency = frequencyId.target.value;
-       const params = new Map<string,any>();
-       params.set('frequency',frequencyId.target.value);
+        this.selectedFrequency = 'DAILY';
+    //    const params = new Map<string,any>();
+    //    params.set('frequency',frequencyId);
        this.baseAPI.executeGet({
         url : apiDirectory.getUserPolicy,
-        params : params
+        // params : params
        }).subscribe({
         next : (res)=>{
             const policy = res as ExpensePolicy;
             if (policy) {
+                console.log(policy);
+                
                 this.setExpenseTypes(policy);
                 this.currentExpense.policy = policy.id; // Use first active policy
                 this.policy = policy as ExpensePolicy;
@@ -346,6 +351,7 @@ export class ExpenseFormComponent implements OnInit {
                 },
                 error : (err)=>{
                     console.log(err);
+                    this.popover.showLog(err);
                 }
             })
             // this.expenseService.submitExpense(expenseReport).subscribe({
