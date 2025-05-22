@@ -5,31 +5,27 @@ import {
   HttpEvent,
   HttpInterceptor
 } from '@angular/common/http';
-import { map, Observable, take } from 'rxjs';
-import { AuthService } from './auth.service';
-import { ExpenseService } from './expense.service';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class HttpInterceptorInterceptor implements HttpInterceptor {
-  public token:string ='';
-
-  constructor(
-    private expenseService: ExpenseService,
-  ) {
-    
-  }
+  constructor() {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    this.expenseService.currentUser$.pipe(
-      take(1),
-      map((user:any) => {
-        console.log("Interceptor",user);
-        
-       this.token = user.token
-      }))
-   const modifiedReq = request.clone({
-      headers: request.headers.set('Authorization', 'Token '+ this.token),
-    });
-    return next.handle(this.token? modifiedReq:request);
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user?.token) {
+          const modifiedReq = request.clone({
+            headers: request.headers.set('Authorization', 'Token ' + user.token),
+          });
+          return next.handle(modifiedReq);
+        }
+      } catch (e) {
+        console.error('Error parsing user from localStorage:', e);
+      }
+    }
+    return next.handle(request);
   }
 }

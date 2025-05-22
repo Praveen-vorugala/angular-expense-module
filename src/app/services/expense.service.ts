@@ -38,6 +38,26 @@ export class ExpenseService {
     dropdownTypes$ = this.dropdownTypesSubject.asObservable();
     properties$ = this.propertiesSubject.asObservable();
 
+    constructor() {
+        // Check localStorage on service initialization
+        this.checkStoredUser();
+    }
+
+    private checkStoredUser() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                if (user) {
+                    this.currentUserSubject.next(user);
+                }
+            } catch (e) {
+                console.error('Error parsing stored user:', e);
+                localStorage.removeItem('user'); // Remove invalid data
+            }
+        }
+    }
+
     getCurrentUser(): User | null {
         return this.currentUserSubject.value;
     }
@@ -46,15 +66,11 @@ export class ExpenseService {
         return this.policiesSubject.value;
     }
 
-    constructor() {}
-
     login(user: any): Observable<any> {
-        // const user = mockUsers.find(u => u.email === email);
-        // if (user) {
-            this.currentUserSubject.next(user);
-            return of(user);
-        // }
-        // return of(null);
+        // Store user in localStorage
+        localStorage.setItem('user', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        return of(user);
     }
 
     logout(): void {

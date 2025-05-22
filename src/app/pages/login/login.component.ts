@@ -61,10 +61,16 @@ import { apiDirectory } from 'src/global';
                     <div>
                         <button
                             type="submit"
-                            [disabled]="loginForm.invalid"
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            [disabled]="loginForm.invalid || isLoading"
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Sign in
+                            <span class="flex items-center">
+                                <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Sign in
+                            </span>
                         </button>
                     </div>
                 </form>
@@ -78,9 +84,11 @@ export class LoginComponent {
         password: ['',]
     });
 
+    isLoading = false;
+
     mockUsers = [
         { role: 'Employee', email: 'balaji.pagadala@adjoint.in',password:'Ba@123456' },
-        { role: 'Manager', email: 'phgani@adjoint.in',password:'Ph@123456' },
+        { role: 'Manager', email: 'phani@adjoint.in',password:'Ph@123456' },
         { role: 'Admin', email: 'praveen@adjoint.in',password:'Pr@123456' }
     ];
 
@@ -94,31 +102,27 @@ export class LoginComponent {
 
     onSubmit(): void {
         if (this.loginForm.valid) {
-            // const email = this.loginForm.get('email')?.value;
-            // this.authService.login(email);
-            // this.expenseService.login(email).subscribe({
-            //     next: (user) => {
-            //         if (user) {
-            //             // Store user data in localStorage
-            //             localStorage.setItem('user', JSON.stringify(user));
-            //             // Navigate to the root path which will show the dashboard
-            //             this.router.navigate(['/']);
-            //         }
-            //     }
-            // });
+            this.isLoading = true;
             this.loginForm.get('password')?.setValue(this.mockUsers.find(user => user.email === this.loginForm.get('email')?.value)?.password);
-            const body ={...this.loginForm.value};
-            this.baseAPI.executePost({url: apiDirectory.login, body:body }).subscribe(res => {
-                console.log('Login successful:', res);
-                // Store user data in localStorage
-                this.expenseService.login(res).subscribe(user =>{
-                    console.log(user);
-                    
-                });
-                localStorage.setItem('user', JSON.stringify(res));
-                // Navigate to the root path which will show the dashboard
-                this.router.navigate(['/dashboard']);
-            })
+            const body = {...this.loginForm.value};
+            
+            this.baseAPI.executePost({url: apiDirectory.login, body:body }).subscribe({
+                next: (res) => {
+                    console.log('Login successful:', res);
+                    this.expenseService.login(res).subscribe(user => {
+                        console.log(user);
+                    });
+                    localStorage.setItem('user', JSON.stringify(res));
+                    this.router.navigate(['/dashboard']);
+                },
+                error: (error) => {
+                    console.error('Login failed:', error);
+                    this.isLoading = false;
+                },
+                complete: () => {
+                    this.isLoading = false;
+                }
+            });
         }
     }
 }

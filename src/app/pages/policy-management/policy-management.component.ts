@@ -1,7 +1,7 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ExpenseService } from '../../services/expense.service';
-import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyCondition, PropertyType, PropertyValue, RuleValueType, ComparisonOperator, PolicyReport } from 'src/app/types/expense';
+import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyCondition, PropertyType, PropertyValue, RuleValueType, ComparisonOperator, PolicyReport, CONDITION_MOCK_PROPERTIES } from 'src/app/types/expense';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
 
@@ -355,7 +355,7 @@ import { apiDirectory } from 'src/global';
                             <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
                             <select formControlName="propertyType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onRuleConditionPropertyTypeChange()">
                                 <option value="" disabled>Select property type</option>
-                                <option *ngFor="let prop of userProperties" [value]="prop.type">{{ prop.name }}</option>
+                                <option *ngFor="let prop of userConditionProperties" [value]="prop.type">{{ prop.name }}</option>
                             </select>
                         </div>
                         <div class="mb-4">
@@ -600,6 +600,7 @@ export class PolicyManagementComponent implements OnInit {
     ruleForm: FormGroup;
     // Conditions
     userProperties: PropertyType[] = [];
+    userConditionProperties:any = CONDITION_MOCK_PROPERTIES;
     propertyValues: PropertyValue[] = [];
     newConditions: PolicyCondition[] = [];
     showConditionModal = false;
@@ -773,7 +774,7 @@ export class PolicyManagementComponent implements OnInit {
             this.createPolicy(newPolicy);
             this.expenseService.addPolicy(newPolicy);
             this.closeModal();
-            this.getPolicies();
+            
         }
     }
 
@@ -800,6 +801,7 @@ export class PolicyManagementComponent implements OnInit {
     createPolicy(policy: ExpensePolicy): void {
         this.baseAPI.executePost({url: apiDirectory.createPolicy, body: policy}).subscribe((data: any) => {
             console.log('Policy created:', data);
+            this.getPolicies();
         });
     }
 
@@ -936,8 +938,7 @@ export class PolicyManagementComponent implements OnInit {
                     rule_type: ruleData.valueType,
                     amount: ruleData.amount,
                     operator: '<',
-                    conditions: [],
-                    userConditions: this.ruleUserConditions
+                    conditions: this.ruleUserConditions,
                 });
             } else if (ruleData.valueType === 'CONSTANT' && ruleData.selectionType === 'expenseCategory') {
                 this.selectedCategories.forEach(categoryId => {
@@ -948,8 +949,7 @@ export class PolicyManagementComponent implements OnInit {
                                 rule_type: ruleData.valueType,
                                 amount: this.categoryAmounts[type.id],
                                 operator: '<',
-                                conditions: [],
-                                userConditions: this.ruleUserConditions
+                                conditions: this.ruleUserConditions,
                             });
                         }
                     });
@@ -960,8 +960,7 @@ export class PolicyManagementComponent implements OnInit {
                     rule_type: ruleData.valueType,
                     amount: ruleData.limitAmount,
                     operator: ruleData.operator,
-                    conditions: [],
-                    userConditions: this.ruleUserConditions
+                    conditions: this.ruleUserConditions,
                 });
             } else if (ruleData.valueType === 'CALCULATED') {
                 newRules.push({
@@ -969,8 +968,7 @@ export class PolicyManagementComponent implements OnInit {
                     rule_type: ruleData.valueType,
                     amount: 0,
                     operator: '<',
-                    conditions: [],
-                    userConditions: this.ruleUserConditions
+                    conditions: this.ruleUserConditions,
                 });
             }
 
@@ -1038,7 +1036,7 @@ export class PolicyManagementComponent implements OnInit {
 
     onRuleConditionPropertyTypeChange(): void {
         const selectedType = this.ruleConditionForm.get('propertyType')?.value;
-        const prop = this.userProperties.find(p => p.type === selectedType);
+        const prop = this.userConditionProperties.find((p:any) => p.type === selectedType);
         this.ruleConditionPropertyValues = prop ? prop.values : [];
         this.ruleConditionForm.get('value')?.setValue('');
     }

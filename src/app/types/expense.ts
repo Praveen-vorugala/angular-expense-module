@@ -335,6 +335,32 @@ export interface PropertyType {
     url?: string;
 }
 
+export const CONDITION_MOCK_PROPERTIES: PropertyType[] = [
+    {
+        id: '3',
+        name: 'Position',
+        type: 'user.user_status',
+        values: [
+            { id: '3-1', value: 'Confirmed', name: 'Full-time Position' },
+            { id: '3-2', value: 'Probationer', name: 'Probation Position' }
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+    {
+        id: '4',
+        name: 'Has vehicle',
+        type: 'user.has_vehicle',
+        values: [
+            { id: '4-1', value: 'true', name: 'Yes' },
+            { id: '4-2', value: 'false', name: 'No' }
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date()
+    },
+
+];
+
 export const MOCK_PROPERTIES: PropertyType[] = [
     {
         id: '1',
@@ -361,17 +387,6 @@ export const MOCK_PROPERTIES: PropertyType[] = [
         createdAt: new Date(),
         updatedAt: new Date(),
         url: '/api/auth/grades/'
-    },
-    {
-        id: '3',
-        name: 'Position',
-        type: 'POSITION',
-        values: [
-            { id: '3-1', value: 'FULLTIME', name: 'Full-time Position' },
-            { id: '3-2', value: 'PROBATION', name: 'Probation Position' }
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date()
     }
 ];
 

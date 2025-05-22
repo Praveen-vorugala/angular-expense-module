@@ -17,6 +17,7 @@ import { PopOverService } from 'src/app/services/pop-over/pop-over.service';
 })
 export class ExpenseFormComponent implements OnInit {
     expenseForm: FormGroup;
+    currentMetric:string = '';
     expenseTypes: ExpenseType[] = [];
     selectedFiles: Map<string, File> = new Map();
     currentExpense: ExpenseReport = {
@@ -56,7 +57,8 @@ export class ExpenseFormComponent implements OnInit {
             receiptFile: [null],
             fromLocation: [''],
             toLocation: [''],
-            tripType: ['']
+            tripType: [''],
+            distance:['']
         });
 
         // Initialize employeeId and policyId from service
@@ -134,6 +136,8 @@ export class ExpenseFormComponent implements OnInit {
         }).subscribe(
             {
                 next : (res)=>{
+                    this.expenseForm.get('distance')?.setValue(res.total_metric);
+                    this.currentMetric= res.metric_type;
                     this.expenseForm.get('amount')?.setValue(tripType === 'ROUND_TRIP' ? res.total_amount * 2 : res.total_amount);
                 },
                 error : (err)=>{

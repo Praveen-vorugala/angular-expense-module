@@ -76,7 +76,7 @@ import { AuthService } from '../services/auth.service';
       </mat-sidenav>
 
       <mat-sidenav-content class="transition-all duration-300" [ngClass]="{'ml-64': !isCollapsed, 'ml-16': isCollapsed}">
-        <mat-toolbar class="flex justify-between shadow-md bg-indigo-700 text-white">
+        <mat-toolbar class="flex justify-between shadow-md bg-indigo-700 text-white sticky top-0;">
           <div class="flex items-center">
             <!-- <img src="assets/logo.png" alt="Logo" class="h-8 w-8 mr-4"> -->
             <span class="text-lg font-medium">Expense Management</span>
