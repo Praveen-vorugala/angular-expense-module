@@ -121,7 +121,7 @@ export class ExpenseFormComponent implements OnInit {
         }
        }) 
     }
-
+    petrolAllowance : any = null;
     calculateDistanceAndAmount(from: string, to: string, tripType : string): void {
         // For now, we'll use a mock distance calculation
         // In a real application, you would use a mapping API like Google Maps API
@@ -138,6 +138,7 @@ export class ExpenseFormComponent implements OnInit {
                 next : (res)=>{
                     this.expenseForm.get('distance')?.setValue(res.total_metric);
                     this.currentMetric= res.metric_type;
+                    this.petrolAllowance = {distance : res, tripType : tripType};
                     this.expenseForm.get('amount')?.setValue(tripType === 'ROUND_TRIP' ? res.total_amount * 2 : res.total_amount);
                 },
                 error : (err)=>{
@@ -206,10 +207,11 @@ export class ExpenseFormComponent implements OnInit {
                         this.expenseForm.get('fromLocation')?.clearValidators();
                         this.expenseForm.get('toLocation')?.clearValidators();
                         this.expenseForm.get('tripType')?.clearValidators();
-                        this.expenseForm.get('tripType')?.disable();
 
                         this.expenseForm.get('fromLocation')?.disable();
                         this.expenseForm.get('toLocation')?.disable();
+                        this.expenseForm.get('tripType')?.disable();
+
                         this.expenseForm.get('amount')?.setValidators([Validators.required, Validators.min(0)]);
                         this.expenseForm.get('amount')?.enable();
                     }
@@ -330,6 +332,9 @@ export class ExpenseFormComponent implements OnInit {
             this.currentExpense.expenses = this.currentExpense.expenses.filter(expense => expense.expense_type !== expense_type);
             this.usedExpenseTypes.delete(expenseType);
             this.updateTotalAmount();
+            if(this.petrolAllowance && this.currentExpense.expenses[index].expense_type === 'petrol allowance'){
+                this.petrolAllowance = null;
+            }
         }
     }
 
@@ -340,9 +345,10 @@ export class ExpenseFormComponent implements OnInit {
     submitExpenses(): void {
         if (this.currentExpense.expenses.length > 0) {
             // Create a copy of the expense report to submit
-            const expenseReport: ExpenseReport = {
+            const expenseReport: any = {
                 ...this.currentExpense,
                 frequency : this.selectedFrequency,
+                meta_data : {...this.petrolAllowance}
             };
             this.baseAPI.executePost(
                 {
