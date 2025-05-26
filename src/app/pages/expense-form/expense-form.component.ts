@@ -132,7 +132,7 @@ export class ExpenseFormComponent implements OnInit {
         }
        }) 
     }
-
+    petrolAllowance : any = null;
     calculateDistanceAndAmount(from: string, to: string, tripType : string): void {
         // For now, we'll use a mock distance calculation
         // In a real application, you would use a mapping API like Google Maps API
@@ -149,6 +149,7 @@ export class ExpenseFormComponent implements OnInit {
                 next : (res)=>{
                     this.expenseForm.get('distance')?.setValue(res.total_metric);
                     this.currentMetric= res.metric_type;
+                    this.petrolAllowance = {distance : res, tripType : tripType};
                     this.expenseForm.get('amount')?.setValue(tripType === 'ROUND_TRIP' ? res.total_amount * 2 : res.total_amount);
                 },
                 error : (err)=>{
@@ -414,6 +415,9 @@ export class ExpenseFormComponent implements OnInit {
             if (this.editingExpenseIndex === index) {
                 this.cancelEditing();
             }
+            if(this.petrolAllowance && this.currentExpense.expenses[index].expense_type === 'petrol allowance'){
+                this.petrolAllowance = null;
+            }
         }
     }
 
@@ -426,9 +430,10 @@ export class ExpenseFormComponent implements OnInit {
             // Create a copy of the expense report to submit
 
             
-            const expenseReport: ExpenseReport = {
+            const expenseReport: any = {
                 ...this.currentExpense,
                 frequency: this.selectedFrequency,
+                meta_data : {...this.petrolAllowance}
             };
             console.log(expenseReport);
             expenseReport.expenses.map(item =>{
