@@ -17,7 +17,7 @@
             </div> -->
             <div class="flex flex-col w-1/3">
                 <label class="text-sm font-medium text-gray-700">From Date</label>
-                <input type="date" (change)="setFromDate($event)" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+                <input type="date" [(ngModel)]="currentExpense.from_report_date" [disabled]="editExpenses"  (change)="setFromDate($event)" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
             </div>
             <!-- <div class="flex flex-col w-1/3">
                 <label class="text-sm font-medium text-gray-700">To Date</label>
@@ -42,7 +42,7 @@
                                     [class.text-red-600]="expenseForm.get('expenseType')?.invalid && expenseForm.get('expenseType')?.touched"
                                 >
                                     <span *ngIf="expenseForm.get('expenseType')?.value as expenseType; else placeholder">
-                                        {{getExpenseTypeName(expenseType)}}
+                                        {{getExpenseTypeName(expenseType.id? expenseType.id : expenseType)}}
                                     </span>
                                     <ng-template #placeholder>
                                         <span class="text-gray-500">Select expense type</span>
@@ -185,9 +185,17 @@
                                     class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Cancel
                             </button>
-                            <button type="button" (click)="addExpense()" [disabled]="expenseForm.invalid" 
+                            <button *ngIf="editingExpenseIndex === -1" type="button" (click)="addExpense()" [disabled]="expenseForm.invalid" 
                                     class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Add Expense
+                            </button>
+                            <button *ngIf="editingExpenseIndex !== -1" type="button" (click)="addExpense()" [disabled]="expenseForm.invalid" 
+                                    class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Update Expense
+                            </button>
+                            <button *ngIf="editingExpenseIndex !== -1" type="button" (click)="cancelEditing()" 
+                                    class="ml-3 inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Cancel Edit
                             </button>
                         </div>
                     </div>
@@ -210,9 +218,9 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr *ngFor="let expense of getAddedExpenses()">
+                                <tr *ngFor="let expense of getAddedExpenses(); let i = index">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{getExpenseTypeName(expense.expense_type)}}
+                                        {{getExpenseTypeName(expense.expense_type.id? expense.expense_type.id : expense.expense_type)}}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         ₹{{expense.amount | number:'1.2-2'}}
@@ -224,6 +232,10 @@
                                         {{expense.receipt_file || 'N/A'}}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button (click)="startEditingExpense(expense, i)" 
+                                                class="text-blue-600 hover:text-blue-900 mr-3">
+                                            Edit
+                                        </button>
                                         <button (click)="removeExpense(expense.expense_type)" 
                                                 class="text-red-600 hover:text-red-900">
                                             Remove
@@ -240,7 +252,7 @@
                     <div class="flex justify-end">
                         <button type="button" (click)="submitExpenses()" 
                                 class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Submit Expenses
+                            {{editExpenses ? 'Update Expenses' : 'Submit Expenses'}}
                         </button>
                     </div>
                 </div>

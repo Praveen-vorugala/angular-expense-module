@@ -50,11 +50,15 @@ export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED' |
 
 export interface ExpenseItem {
     id?: string;
-    expense_type: string;
+    expense_type: any | string;
     amount: number;
     description?: string;
     receipt_file?: string;
     name?: string;
+    from_location?: string;
+    to_location?: string;
+    trip_type?: string;
+    distance?: string;
 }
 
 export interface ExpenseReport {

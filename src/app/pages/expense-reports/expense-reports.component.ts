@@ -3,6 +3,7 @@ import { ExpensePolicy, ExpenseReport, ExpenseStatus, mockPolicies, mockExpenses
 import { ExpenseService } from '../../services/expense.service';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
+import { Router } from '@angular/router';
 
 // Mock expense reports data
 const mockReports: ExpenseReport[] = [
@@ -79,7 +80,8 @@ export class ExpenseReportsComponent implements OnInit {
 
   constructor(
     private expenseService: ExpenseService,
-    private baseAPI : BaseApiService
+    private baseAPI : BaseApiService,
+    private router: Router,
   )
      {
     // Get expense types for display
@@ -136,6 +138,10 @@ export class ExpenseReportsComponent implements OnInit {
   ngOnInit() {
     // Sort reports by date (newest first)
     this.getReports();
+  }
+
+  editReportDetails(report: ExpenseReport): void {
+    this.router.navigate(['/submit-expense/', report.id]);
   }
 
 

@@ -10,6 +10,7 @@ import { ExpenseReportsComponent } from './pages/expense-reports/expense-reports
 import { AuthService } from './services/auth.service';
 import { LayoutModule } from './layout/layout.module';
 import { PopOverService } from './services/pop-over/pop-over.service';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
     declarations: [
@@ -22,7 +23,8 @@ import { PopOverService } from './services/pop-over/pop-over.service';
         FormsModule,
         ReactiveFormsModule,
         AppRoutingModule,
-        LayoutModule
+        LayoutModule,
+        MatSnackBarModule,
     ],
     providers: [
         AuthService,

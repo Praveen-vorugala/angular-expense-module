@@ -117,7 +117,11 @@ export class ExpenseTypeManagementComponent implements OnInit {
 
     loadExpenseTypes(): void {
         this.isLoadingTypes = true;
-        this.baseAPI.executeGet({url: apiDirectory.expenseTypes}).subscribe({
+        const params = new Map<string, string>();
+        params.set('is_active', 'true');
+        params.set('page_size', '40');
+
+        this.baseAPI.executeGet({url: apiDirectory.expenseTypes,params:params}).subscribe({
             next: (data: any) => {
                 this.expenseTypes = data.results;
                 this.isLoadingTypes = false;
@@ -131,7 +135,10 @@ export class ExpenseTypeManagementComponent implements OnInit {
 
     loadCategories(): void {
         this.isLoadingCategories = true;
-        this.baseAPI.executeGet({url: apiDirectory.expenseCategories}).subscribe({
+        const params = new Map<string, string>();
+        params.set('is_active', 'true');
+        params.set('page_size', '40');
+        this.baseAPI.executeGet({url: apiDirectory.expenseCategories,params:params}).subscribe({
             next: (data: any) => {
                 this.categories = data.results;
                 this.isLoadingCategories = false;
