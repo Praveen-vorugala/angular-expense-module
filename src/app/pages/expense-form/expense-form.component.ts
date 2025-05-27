@@ -436,7 +436,7 @@ export class ExpenseFormComponent implements OnInit {
                 meta_data : {...this.petrolAllowance}
             };
             console.log(expenseReport);
-            expenseReport.expenses.map(item =>{
+            expenseReport.expenses.map((item:any) =>{
                 (item.id == ''|| item.id == null) ? delete item.id : null;
             })
 

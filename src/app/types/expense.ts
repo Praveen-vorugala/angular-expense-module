@@ -409,4 +409,9 @@ export interface ExpenseRule {
     operator: ComparisonOperator;
     conditions: any[];
     userConditions: PolicyCondition[];
+    meta_data?: {
+        threshold?: number;
+        rate_before_threshold?: number;
+        rate_after_threshold?: number;
+    };
 }
