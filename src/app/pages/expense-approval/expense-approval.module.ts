@@ -5,6 +5,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ExpenseApprovalComponent } from './expense-approval.component';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
     declarations: [ExpenseApprovalComponent],
@@ -12,6 +14,8 @@ import { ExpenseApprovalComponent } from './expense-approval.component';
         CommonModule,
         MatTableModule,
         MatButtonModule,
+        MatIconModule,
+        ReactiveFormsModule,
         MatCardModule,
         RouterModule.forChild([
             {

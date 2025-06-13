@@ -1,11 +1,15 @@
 <div class="p-4">
     <h1 class="text-2xl font-bold mb-4">Expense Approval</h1>
     <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-        <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" (change)="onFrequencyChange($event)">
-            <option value="" disabled>Select frequency</option>
-            <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
-        </select>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">From date</label>
+           <input type="date" [formControl]="fromDate" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">To date</label>
+            <input type="date" [formControl]="toDate" (change)="setToDate($event)" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3">
+        </div>
+        
     </div>
 
     <!-- Dynamic Table -->
@@ -36,15 +40,15 @@
                                     class="px-2 py-1 rounded-full text-xs font-medium">
                                     {{getApprovalStatus(date, column)}}
                                 </span>
-                                <button (click)="approveStatus(date, column)" 
-                                        [disabled]="getApprovalStatus(date, column) !== 'IN_REVIEW'"
+                                <button *ngIf="checkColumns(date,column)" (click)="approveStatus(date, column)" 
+                                        [disabled]="!(getApprovalStatus(date, column) == 'IN_REVIEW' || 'TEMPORARY_SAVE')"
                                         class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                     Approve
                                 </button>
-                                <button (click)="rejectStatus(date, column)"
-                                        [disabled]="getApprovalStatus(date, column) !== 'IN_REVIEW'"
-                                        class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                    Reject
+                                <button *ngIf="checkColumns(date,column)" (click)="temporarySave(date, column)"
+                                        [disabled]="!(getApprovalStatus(date, column) == 'IN_REVIEW' || 'TEMPORARY_SAVE')"
+                                        class="px-3 py-1 bg-[#4338ca] text-white rounded hover:bg-[#4338ca] text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Save
                                 </button>
                             </div>
                         </ng-container>
@@ -59,7 +63,19 @@
                                            (input)="onAmountChange(date, column, $any($event.target).value)"
                                            class="w-24 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                            step="0.01">
+                                           <div *ngIf="checkHistory(date, column)" class="ml-2 cursor-pointer icon-container " (mouseenter)="showPopup = true" (mouseleave)="showPopup = false">
+                                                <span>
+                                                <mat-icon>info</mat-icon>  
+                                                </span>
+                                                <div class="custom-popup" *ngIf="showPopup">
+                                                    <div class="flex justify-center" ><strong>History</strong></div>
+                                                    <p class="m-2">Old value :{{ getHistoryValues(date,column,'previous_amount') }} </p>
+                                                    <p class="m-2">New value :{{ getHistoryValues(date,column,'new_amount') }} </p>
+
+                                                </div>
+                                            </div>
                                 </ng-container>
+                                
                                 <!-- Non-editable Amount -->
                                 <ng-container *ngIf="!isEditable(date, column)">
                                     <span>{{getExpenseValue(date, column)}}</span>
@@ -86,3 +102,4 @@
         </button>
     </div> -->
 </div> 
+

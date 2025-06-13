@@ -46,7 +46,6 @@ export class PolicyManagementComponent implements OnInit {
     categoryAmounts: Record<string, number> = {};
     expenseCategories: ExpenseCategory[] = [];
     showReportModal = false;
-    reportForm: FormGroup;
     newReportRules: ExpenseRule[] = [];
     currentReport: PolicyReport | null = null;
     selectedPropertyValues: string[] = [];
@@ -54,6 +53,7 @@ export class PolicyManagementComponent implements OnInit {
     showValueDropdown = false;
     showViewPolicyModal = false;
     selectedPolicyDetails: any = null;
+    isLoading:boolean = false;
 
     readonly operators: { value: ComparisonOperator; label: string }[] = [
         { value: '<', label: '<' },
@@ -90,7 +90,8 @@ export class PolicyManagementComponent implements OnInit {
             userConditions: [[]],
             threshold: [0],
             rate_before_threshold: [0],
-            rate_after_threshold: [0]
+            rate_after_threshold: [0],
+            frequency: ['DAILY'],
         });
 
         this.conditionForm = this.fb.group({
@@ -101,10 +102,6 @@ export class PolicyManagementComponent implements OnInit {
         this.ruleConditionForm = this.fb.group({
             propertyType: ['', Validators.required],
             value: ['', Validators.required]
-        });
-
-        this.reportForm = this.fb.group({
-            frequency: ['', Validators.required]
         });
     }
 
@@ -146,10 +143,11 @@ export class PolicyManagementComponent implements OnInit {
                             rule['expense_type'] = rule['expense_type'].hasOwnProperty('id')? rule['expense_type']['id'] : rule['expense_type'];
                         })
                     })
+                 this.newReportRules = this.flattenGroupedRules(this.selectedPolicy['reports'])['rules'];
+                 console.log(this.newReportRules);
                 }
             } 
             console.log(this.selectedPolicy);
-            
             this.showViewPolicyModal = showModal;
         });
     }
@@ -172,9 +170,11 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     getPolicies():void{
+        this.isLoading = true;
         const params = new Map<string, string>();
         params.set('ordering', '-created_at');
         this.baseAPI.executeGet({url: apiDirectory.getPolicies,params:params}).subscribe((data: any) => {
+            this.isLoading = false;
             this.policies = data.results;
             console.log(this.policies);
             
@@ -241,6 +241,8 @@ export class PolicyManagementComponent implements OnInit {
     // Expense Rules logic
     openRuleModal(policy: ExpensePolicy | null, report: PolicyReport | null = null): void {
         this.showRuleModal = true;
+        console.log("open");
+        
         this.ruleForm.reset({ 
             valueType: 'CONSTANT', 
             amount: 0, 
@@ -250,7 +252,8 @@ export class PolicyManagementComponent implements OnInit {
             userConditions: [], 
             threshold: 0, 
             rate_before_threshold: 0, 
-            rate_after_threshold: 0 
+            rate_after_threshold: 0,
+            frequency:'DAILY'
         });
         this.ruleUserConditions = [];
         this.selectedPolicy = policy;
@@ -406,6 +409,7 @@ export class PolicyManagementComponent implements OnInit {
                     amount: ruleData.amount,
                     operator: '<',
                     conditions: this.ruleUserConditions,
+                    frequency: ruleData.frequency,
                 });
             } else if (ruleData.valueType === 'CONSTANT' && ruleData.selectionType === 'expenseCategory') {
                 this.selectedCategories.forEach(categoryId => {
@@ -417,6 +421,7 @@ export class PolicyManagementComponent implements OnInit {
                                 amount: this.categoryAmounts[type.id],
                                 operator: '<',
                                 conditions: this.ruleUserConditions,
+                                frequency: ruleData.frequency,
                             });
                         }
                     });
@@ -428,6 +433,7 @@ export class PolicyManagementComponent implements OnInit {
                     amount: ruleData.limitAmount,
                     operator: ruleData.operator,
                     conditions: this.ruleUserConditions,
+                    frequency: ruleData.frequency,
                 });
             } else if (ruleData.valueType === 'CALCULATED') {
                 newRules.push({
@@ -436,6 +442,7 @@ export class PolicyManagementComponent implements OnInit {
                     amount: 0,
                     operator: '<',
                     conditions: this.ruleUserConditions,
+                    frequency: ruleData.frequency,
                     meta_data: {
                         threshold: ruleData.threshold,
                         rate_before_threshold: ruleData.rate_before_threshold,
@@ -469,6 +476,7 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     resetRuleForm(): void {
+        console.log("rest");
         this.ruleForm.reset({
             valueType: '',
             selectionType: 'expenseType',
@@ -480,7 +488,8 @@ export class PolicyManagementComponent implements OnInit {
             userConditions: [],
             threshold: 0,
             rate_before_threshold: 0,
-            rate_after_threshold: 0
+            rate_after_threshold: 0,
+            frequency: 'DAILY',
         });
         this.selectedCategories = [];
         this.categoryAmounts = {};
@@ -609,6 +618,7 @@ export class PolicyManagementComponent implements OnInit {
     handleAddRule(policy: ExpensePolicy | null = null): void {
         this.selectedPolicy = policy;
         this.showRuleForm = true;
+        console.log("handle");
         this.ruleForm.reset({
             valueType: 'CONSTANT',
             amount: 0,
@@ -618,12 +628,15 @@ export class PolicyManagementComponent implements OnInit {
             userConditions: [],
             threshold: 0,
             rate_before_threshold: 0,
-            rate_after_threshold: 0
+            rate_after_threshold: 0,
+           frequency: 'DAILY',
         });
         console.log('addReport - selectedPolicy:', this.selectedPolicy);
     }
 
     handleSaveRule(): void {
+        console.log("kefpekfp");
+        
         if (this.ruleForm.valid) {
             const ruleData = this.ruleForm.value;
             const newRule: ExpenseRule = {
@@ -771,7 +784,6 @@ export class PolicyManagementComponent implements OnInit {
         this.viewPolicy(policy,false);
         // this.selectedPolicy = { ...policy }; // Create a copy of the policy
         this.showReportModal = true;
-        this.reportForm.reset();
         this.newReportRules = [];
         console.log('addReport - selectedPolicy:', this.selectedPolicy);
     }
@@ -784,19 +796,50 @@ export class PolicyManagementComponent implements OnInit {
         console.log('closeReportModal - after reset - selectedPolicy:', this.selectedPolicy);
     }
 
+    flattenGroupedRules(input: any): any{
+        const rules: any[] = [];
+        input.forEach((group:any) => {
+            group.rules.forEach((rule:any) => {
+            // Ensure each rule has the correct frequency
+            rules.push({ ...rule, frequency: group.frequency });
+            });
+        });
+        return { rules };
+    }
+
+    groupRulesByFrequency(input: any): any {
+        const grouped: { [key: string]: any[] } = {};
+
+        input.rules.forEach((rule:any) => {
+            if (!grouped[rule.frequency]) {
+            grouped[rule.frequency] = [];
+            }
+            grouped[rule.frequency].push(rule);
+        });
+
+        return Object.entries(grouped).map(([frequency, rules]) => ({
+            frequency,
+            rules,
+        }));
+    }
+
     onAddReport(): void {
         console.log('onAddReport - selectedPolicy:', this.selectedPolicy);
-        if (this.isReportFormValid() && this.selectedPolicy) {
+        if (this.selectedPolicy) {
             const newReport: PolicyReport = {
-                frequency: this.reportForm.value.frequency,
                 rules: [...this.newReportRules]
             };
+            console.log(this.newReportRules);
+            console.log(newReport);
+            
+            let currentReport = this.groupRulesByFrequency(newReport);
+            console.log(currentReport);
             
             if (!this.selectedPolicy.reports) {
                 this.selectedPolicy.reports = [];
             }
             
-            this.selectedPolicy.reports.push(newReport);
+            this.selectedPolicy.reports = currentReport;
             console.log('onAddReport - after adding report - selectedPolicy:', this.selectedPolicy);
             
             // Update the policy in the policies array
@@ -819,10 +862,6 @@ export class PolicyManagementComponent implements OnInit {
         }
     }
 
-    isReportFormValid(): boolean {
-        const frequencyValid = this.reportForm.get('frequency')?.valid ?? false;
-        return frequencyValid && this.newReportRules.length > 0;
-    }
 
     updatePolicy(): void {
         if (this.selectedPolicy) {

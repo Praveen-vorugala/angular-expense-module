@@ -46,7 +46,7 @@ export interface ExpenseType {
     category_name?: string;
 }
 
-export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED' | 'SUBMITTED';
+export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED' | 'SUBMITTED'| 'TEMPORARY_SAVE';
 
 export interface ExpenseItem {
     id?: string;
@@ -79,7 +79,7 @@ export interface ExpenseReport {
 }
 
 export interface PolicyReport {
-    frequency: 'DAILY' | 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'ANNUALLY';
+    // frequency: 'DAILY' | 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'ANNUALLY';
     rules: ExpenseRule[];
 }
 

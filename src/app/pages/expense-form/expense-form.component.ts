@@ -20,6 +20,7 @@ export class ExpenseFormComponent implements OnInit {
     currentMetric:string = '';
     expenseTypes: ExpenseType[] = [];
     selectedFiles: Map<string, File> = new Map();
+    isLoading: boolean = false;
     currentExpense: ExpenseReport = {
         id: '',
         policy: '',
@@ -86,6 +87,7 @@ export class ExpenseFormComponent implements OnInit {
         this.fromDate = (event.target as HTMLInputElement).value;
         this.currentExpense.from_report_date = this.fromDate;
         this.currentExpense.to_report_date = this.fromDate;
+        this.getDefaultExpenses();
     }
     
     // setToDate(event : Event){
@@ -109,7 +111,24 @@ export class ExpenseFormComponent implements OnInit {
         })
     }
 
+    getDefaultExpenses(){
+        const params = new Map<string, any>();
+        params.set('visit_date', this.fromDate);
+        this.baseAPI.executeGet({url:apiDirectory.defaultExpnses,params:params}).subscribe(res =>{
+            let some:ExpenseItem[] = res.rules;
+            this.updateCurrentExpenses(some);
+            // const cleanedRules: ExpenseItem[] = some.map(({ expense_type,amount,description }) => ({
+            // expense_type,
+            // amount,
+            // description
+            // }));
+            // console.log(cleanedRules);
+            
+        })
+    }
+
     getUserPolicy(frequencyId : any){
+        this.isLoading = true;
         this.selectedFrequency = 'DAILY';
     //    const params = new Map<string,any>();
     //    params.set('frequency',frequencyId);
@@ -118,6 +137,7 @@ export class ExpenseFormComponent implements OnInit {
         // params : params
        }).subscribe({
         next : (res)=>{
+            this.isLoading = false;
             const policy = res as ExpensePolicy;
             if (policy) {
                 console.log(policy);
@@ -141,6 +161,11 @@ export class ExpenseFormComponent implements OnInit {
         let params = new Map<string, any>();
         params.set('source_city_id', from);
         params.set('destination_city_id', to);
+        let givenParams:any = this.policy?.rules.find((rule:any)=>rule.rule_type == 'CALCULATED');
+        Object.keys(givenParams?.meta_data ).forEach((key) => {
+            params.set(key, givenParams?.meta_data[key]);
+        })
+        // this.expenseTypes.map((type: ExpenseType) => type.id === 'petrol allowance' ? params.set('expense_type', type.id) : null);
         this.baseAPI.executeGet({
             url : apiDirectory.getDistance,
             params : params
@@ -290,6 +315,7 @@ export class ExpenseFormComponent implements OnInit {
                 console.log(res);
                 const expenseData = res as ExpenseReport;
                 this.currentExpense = expenseData;
+                console.log(this.currentExpense);
                 
                 // Set the frequency
                 this.selectedFrequency = expenseData.frequency;
@@ -304,22 +330,43 @@ export class ExpenseFormComponent implements OnInit {
 
                 // Get the policy for this expense
                 this.getUserPolicy(expenseData.frequency);
-
+                this.updateCurrentExpenses(expenseData.expenses);
                 // Prefill the expenses list
-                this.currentExpense.expenses = expenseData.expenses;
-                this.updateTotalAmount();
-
-                // Mark expense types as used
-                expenseData.expenses.forEach((expense:any) => {
-                    expense.expense_type = expense.expense_type.id;
-                    this.usedExpenseTypes.add(expense.expense_type.id);
-                });
+                // this.currentExpense.expenses = expenseData.expenses;
+                // this.updateTotalAmount();
+                // console.log(this.currentExpense.expenses);
+                
+                // // Mark expense types as used
+                // expenseData.expenses.forEach((expense:any) => {
+                //     expense.expense_type = expense.expense_type.id;
+                //     this.usedExpenseTypes.add(expense.expense_type);
+                //     console.log(this.usedExpenseTypes);
+                    
+                // });
             },
             error => {
                 console.error('Error fetching expense:', error);
                 this.popover.showError('Failed to load expense details');
             }
         )   
+    }
+
+    updateCurrentExpenses(expenseData:any){
+        console.log(expenseData);
+        
+        this.currentExpense.expenses = expenseData;
+        console.log(this.currentExpense);
+        
+        this.updateTotalAmount();
+        console.log(this.currentExpense.expenses);
+        
+        // Mark expense types as used
+        expenseData.forEach((expense:any) => {
+            expense.expense_type = expense.expense_type.id;
+            this.usedExpenseTypes.add(expense.expense_type);
+            console.log(this.usedExpenseTypes);
+            
+        });
     }
 
     getAvailableExpenseTypes(): ExpenseType[] {
@@ -391,6 +438,8 @@ export class ExpenseFormComponent implements OnInit {
                 // Add new expense
                 this.currentExpense.expenses.push(expense);
                 this.usedExpenseTypes.add(expenseType);
+                console.log(this.usedExpenseTypes);
+                
             }
 
             this.expenseForm.reset();

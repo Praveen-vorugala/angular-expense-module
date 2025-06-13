@@ -12,6 +12,7 @@ const _apiDirectory = {
     "getCities" : "/api/policies/cities/",
     "approveExpenses":"/api/expenses/expense-approvals/",
     "login":"/api/auth/login/",
+    "defaultExpnses":"/api/expenses/expenses/get_user_expenses/"
 }
 
 export const apiDirectory = _apiDirectory;

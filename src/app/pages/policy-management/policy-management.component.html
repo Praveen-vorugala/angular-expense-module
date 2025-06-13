@@ -1,9 +1,12 @@
 <div class="p-4">
-    <h1 class="text-2xl font-bold mb-6">Policy Management</h1>
-    <button (click)="openModal()" class="mb-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Add Policy</button>
+    <div class="flex justify-between" >
+        <h1 class="text-2xl font-bold mb-6">Policy Management</h1>
+        <button (click)="openModal()" class="mb-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Add Policy</button>
+    </div>
     
+    <app-loader [show]="isLoading"></app-loader>
     <!-- Policy List -->
-    <div class="flex flex-col gap-4">
+    <div *ngIf="!isLoading" class="flex flex-col gap-4">
         <div *ngFor="let policy of policies" class="bg-white rounded-lg shadow-md p-4 border border-gray-200 w-full">
             <div class="flex flex-col gap-4">
                 <!-- Policy Header -->
@@ -17,7 +20,7 @@
                             View Policy
                         </button>
                         <button (click)="addReport(policy)" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
-                            Add Report Configuration
+                            Add Expense Rules
                         </button>
                     </div>
                 </div>
@@ -86,15 +89,15 @@
     <div *ngIf="showReportModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl relative">
             <button (click)="closeReportModal()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
-            <h3 class="text-lg font-bold mb-4">Add Report</h3>
-            <form [formGroup]="reportForm">
-                <div class="mb-4">
+            <h3 class="text-lg font-bold mb-4">Add Expense rules</h3>
+            <form>
+                <!-- <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
                     <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="" disabled>Select frequency</option>
                         <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
                     </select>
-                </div>
+                </div> -->
 
                 <!-- Expense Rules Section -->
                 <div class="mb-4">
@@ -182,7 +185,7 @@
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="button" (click)="onAddReport()" [disabled]="!isReportFormValid()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Report</button>
+                    <button type="button" (click)="onAddReport()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Add Report</button>
                 </div>
             </form>
         </div>
@@ -318,6 +321,14 @@
                             <input type="number" formControlName="rate_after_threshold" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter rate after threshold" />
                         </div>
                     </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                    <select formControlName="frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="" disabled>Select frequency</option>
+                        <option *ngFor="let freq of frequencyOptions" [value]="freq.value">{{ freq.label }}</option>
+                    </select>
                 </div>
 
                 <!-- User Conditions Section -->

@@ -25,15 +25,15 @@
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" 
                   [ngClass]="{
                     'bg-green-100 text-green-800': report.status === 'APPROVED',
-                    'bg-yellow-200 text-yellow-800': report.status === 'PENDING',
+                    'bg-yellow-200 text-yellow-800': report.status === 'TEMPORARY_SAVE',
                     'bg-red-100 text-red-800': report.status === 'REJECTED',
                     'bg-blue-100 text-blue-800': report.status === 'SUBMITTED'
                   }">
-              {{report.status}}
+              {{ report.status |removeUnderscore:'_' }}
             </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <button  (click)="editReportDetails(report)"
+            <button *ngIf="report.status == 'SUBMITTED'" (click)="editReportDetails(report)"
                     class="mr-5 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               Edit Report
             </button>
@@ -47,12 +47,15 @@
     </table>
   </div>
 
-  <div class="mt-6 text-center" *ngIf="submittedReports.length === 0">
-    <p class="text-gray-500">No submitted expense reports found.</p>
+  <div class="mt-5" >
+    <app-loader [show]="isLoading"></app-loader>
   </div>
 
-  <!-- Details Modal -->
-  <div *ngIf="selectedReport" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+  <div *ngIf="!isLoading" class="mt-6 text-center">
+    <div class="mt-6 text-center" *ngIf="submittedReports.length === 0">
+    <p class="text-gray-500">No submitted expense reports found.</p>
+  </div>
+    <div *ngIf="selectedReport" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
       <div class="flex justify-between items-center pb-3">
         <h3 class="text-2xl font-bold">Expense Details</h3>
@@ -100,4 +103,11 @@
       </div>
     </div>
   </div>
+  </div>
+
+
+  
+
+  <!-- Details Modal -->
+  
 </div>

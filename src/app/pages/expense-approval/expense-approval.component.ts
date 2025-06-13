@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { from } from 'rxjs';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
 
@@ -52,8 +53,11 @@ export class ExpenseApprovalComponent implements OnInit {
         { value: 'MONTHLY', label: 'Monthly' }
     ];
     frequency: FormControl = new FormControl('DAILY');
+    fromDate: FormControl = new FormControl('');
+    toDate: FormControl = new FormControl('');
     expenseConfig: ExpenseConfig[] = [];
     changedExpenses: ExpenseChange[] = [];
+    showPopup: boolean = false;
 
     dates: string[] = [];
     columns: string[] = [];
@@ -61,7 +65,7 @@ export class ExpenseApprovalComponent implements OnInit {
     constructor(private baseAPI: BaseApiService) {}
 
     ngOnInit() {
-        this.getExpensConfiguration();
+        // this.getExpensConfiguration();
     }
 
     private initializeTable() {
@@ -84,7 +88,10 @@ export class ExpenseApprovalComponent implements OnInit {
     }
 
     getExpensConfiguration() {
-        this.baseAPI.executeGet({url: apiDirectory.expenseSummary}).subscribe(res => {
+        const params = new Map<string, string>();
+        params.set('from_date', this.fromDate.value || '');
+        params.set('to_date', this.toDate.value || '');
+        this.baseAPI.executeGet({url: apiDirectory.expenseSummary,params:params}).subscribe(res => {
             this.expenseConfig = res;
             this.expenseConfig.forEach(config => {
                 Object.values(config).forEach(dateConfig => {
@@ -148,12 +155,14 @@ export class ExpenseApprovalComponent implements OnInit {
         
     }
 
+    setToDate(event:any) {
+        this.getExpensConfiguration();
+    }
+
     chekStatusFields(column: string, date: string): boolean {
         const config = this.expenseConfig.find(c => c[date]);
         if (config) {
             const value = config[date][column];
-            console.log(config,date,column,value);
-            
             if (typeof value === 'string') return false;
             return 'status' in value;
 
@@ -169,6 +178,38 @@ export class ExpenseApprovalComponent implements OnInit {
     getOverallStatus(date: string): string {
         const config: any = this.expenseConfig.find(c => c[date]);
         return config?.[date]?.['overall_status'] || 'IN_REVIEW';
+    }
+
+    checkColumns(date: string,column:string):boolean {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            const value = config[date][column];
+            return value['is_permitted'];
+        }
+        return false;
+    }
+
+    getHistoryValues(date: string, column: string,key:string): number {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            const value = config[date][column];
+            return value['history'][value['history'].length - 1][key];
+        }
+        return 0;
+    }
+
+    checkHistory(date: string, column: string): boolean {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            const value = config[date][column];
+            console.log(value);
+            if(value['history'].length>0){
+                return true;
+            }
+            // if (typeof value === 'string') return false;
+            // return 'history' in value && Array.isArray(value.history) && value.history.length > 0;
+        }
+        return false;
     }
 
     getApprovalStatus(date: string, column: string): string {
@@ -227,6 +268,28 @@ export class ExpenseApprovalComponent implements OnInit {
                 if ('status' in value) {
                     value.status = 'REJECTED';
                 }
+            })
+
+        }
+    }
+
+    temporarySave(date: string, column: string) {
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            // const value = config[date][column];
+            // if (typeof value === 'string') return;
+            // if ('status' in value) {
+            //     value.status = 'REJECTED';
+            // }
+            let body:any ={};
+            body['expenses'] = [...this.changedExpenses];
+            this.baseAPI.executePost({url: `${apiDirectory.approveExpenses}${config[date][column]['id']+'/temp-save/' }`, body:body }).subscribe(res => {
+                console.log('Status updated:', res);
+                const value = config[date][column];
+                // if (typeof value === 'string') return;
+                // if ('status' in value) {
+                //     value.status = 'REJECTED';
+                // }
             })
 
         }

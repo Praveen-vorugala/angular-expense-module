@@ -32,7 +32,7 @@ const routes: Routes = [
             {
                 path: 'approve-expenses',
                 canActivate: [AuthGuard],
-                data: { allowedRoles: ['MANAGER'] },
+                data: { allowedRoles: ['MANAGER','ADMIN'] },
                 loadChildren: () => import('./pages/expense-approval/expense-approval.module').then(m => m.ExpenseApprovalModule)
             },
             {

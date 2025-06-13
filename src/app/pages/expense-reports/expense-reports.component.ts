@@ -77,6 +77,7 @@ export class ExpenseReportsComponent implements OnInit {
   submittedReports: ExpenseReport[] = [];
   selectedReport: any | null = null;
   expenseTypes: Record<string, string> = {};
+  isLoading: boolean = false;
 
   constructor(
     private expenseService: ExpenseService,
@@ -103,11 +104,14 @@ export class ExpenseReportsComponent implements OnInit {
   }
 
   getReports(){
+    this.isLoading = true;
     this.baseAPI.executeGet(
       {
         url : apiDirectory.expenseReports
       }
     ).subscribe((res : any) => {
+      this.isLoading= false;
+
       this.submittedReports = res.results;
     })
   }

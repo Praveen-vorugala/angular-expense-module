@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { ExpenseFormComponent } from './expense-form.component';
+import { appCommonsModule } from 'src/app/commons/commons.module';
 
 @NgModule({
     declarations: [ExpenseFormComponent],
@@ -22,6 +23,7 @@ import { ExpenseFormComponent } from './expense-form.component';
         MatButtonModule,
         MatCardModule,
         MatSnackBarModule,
+        appCommonsModule,
         RouterModule.forChild([
             {
                 path: '',
