@@ -7,4 +7,5 @@ import { Component, Input } from '@angular/core';
 })
 export class LoaderComponent {
   @Input() show: boolean = true;
+  @Input() loadingText : string = '';
 }
