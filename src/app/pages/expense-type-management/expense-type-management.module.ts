@@ -9,24 +9,27 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { ExpenseTypeManagementComponent } from './expense-type-management.component';
+import { appCommonsModule } from "../../commons/commons.module";
 
 @NgModule({
     declarations: [ExpenseTypeManagementComponent],
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatButtonModule,
-        MatCardModule,
-        MatTableModule,
-        RouterModule.forChild([
-            {
-                path: '',
-                component: ExpenseTypeManagementComponent
-            }
-        ])
-    ]
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatCardModule,
+    MatTableModule,
+    appCommonsModule,
+    RouterModule.forChild([
+        {
+            path: '',
+            component: ExpenseTypeManagementComponent
+        }
+    ]),
+    appCommonsModule
+]
 })
 export class ExpenseTypeManagementModule { } 

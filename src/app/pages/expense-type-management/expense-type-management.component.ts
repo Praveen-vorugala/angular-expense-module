@@ -4,10 +4,12 @@ import { ExpenseService } from '../../services/expense.service';
 import { ExpenseType, ExpenseCategory } from 'src/app/types/expense';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
+import { PopOverService } from 'src/app/services/pop-over/pop-over.service';
 
 @Component({
     selector: 'app-expense-type-management',
     template: `
+        <app-loader [show]="isLoading" [loadingText]="loaderText"></app-loader>
         <div class="p-4">
             <h1 class="text-2xl font-bold mb-6">Expense Type Management</h1>
             <!-- Add New Expense Type Form -->
@@ -55,8 +57,8 @@ import { apiDirectory } from 'src/global';
                         [disabled]="expenseTypeForm.invalid || isSubmitting"
                         class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                     >
-                        <span *ngIf="isSubmitting">Adding...</span>
-                        <span *ngIf="!isSubmitting">Add Expense Type</span>
+                        <!-- <span *ngIf="isSubmitting">Adding...</span> -->
+                        <span>Add Expense Type</span>
                     </button>
                 </div>
             </form>
@@ -97,11 +99,14 @@ export class ExpenseTypeManagementComponent implements OnInit {
     isLoadingTypes = false;
     isLoadingCategories = false;
     isSubmitting = false;
+    isLoading:boolean = false;
+    loaderText:string = '';
 
     constructor(
         private baseAPI: BaseApiService,
         private fb: FormBuilder,
-        private expenseService: ExpenseService
+        private expenseService: ExpenseService,
+        private popoverService: PopOverService,
     ) {
         this.expenseTypeForm = this.fb.group({
             name: ['', Validators.required],
@@ -120,7 +125,7 @@ export class ExpenseTypeManagementComponent implements OnInit {
         const params = new Map<string, string>();
         params.set('is_active', 'true');
         params.set('page_size', '40');
-
+        params.set('ordering', '-created_at');
         this.baseAPI.executeGet({url: apiDirectory.expenseTypes,params:params}).subscribe({
             next: (data: any) => {
                 this.expenseTypes = data.results;
@@ -158,6 +163,8 @@ export class ExpenseTypeManagementComponent implements OnInit {
     onSubmit(): void {
         if (this.expenseTypeForm.valid) {
             this.isSubmitting = true;
+            this.isLoading = true;
+            this.loaderText = 'Creating...'
             const newType = {
                 ...this.expenseTypeForm.value,
                 is_active: true // Always default to active
@@ -165,13 +172,20 @@ export class ExpenseTypeManagementComponent implements OnInit {
             newType['code'] = this.getInitialsUppercase(newType.name);
             this.baseAPI.executePost({url: apiDirectory.expenseTypes, body: newType}).subscribe({
                 next: (response: any) => {
-                    this.expenseTypes = [...this.expenseTypes, response];
+                    // this.expenseTypes = [...this.expenseTypes, response];
+                    this.loadExpenseTypes();
                     this.expenseTypeForm.reset();
                     this.isSubmitting = false;
+                    this.isLoading = false;
+                    this.loaderText = '';
+                    this.popoverService.showSuccess('New Expense Type created successfully.',3000);
                 },
                 error: (error) => {
                     console.error('Error adding expense type:', error);
                     this.isSubmitting = false;
+                    this.isLoading = false;
+                    this.loaderText = '';
+                    this.popoverService.showError('Failed to create. Please try again later.',3000);
                 }
             });
         }

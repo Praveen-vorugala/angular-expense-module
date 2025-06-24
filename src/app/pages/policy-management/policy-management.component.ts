@@ -4,6 +4,7 @@ import { ExpenseService } from '../../services/expense.service';
 import { ExpensePolicy, ExpenseRule, ExpenseType, ExpenseCategory, PolicyCondition, PropertyType, PropertyValue, RuleValueType, ComparisonOperator, PolicyReport, CONDITION_MOCK_PROPERTIES } from 'src/app/types/expense';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
+import { PopOverService } from 'src/app/services/pop-over/pop-over.service';
 
 @Component({
     selector: 'app-policy-management',
@@ -52,8 +53,13 @@ export class PolicyManagementComponent implements OnInit {
     availablePropertyValues: PropertyValue[] = [];
     showValueDropdown = false;
     showViewPolicyModal = false;
+    showPolicyDetailsLoader: boolean = false;
     selectedPolicyDetails: any = null;
     isLoading:boolean = false;
+    loaderText: string = '';
+    disableReportAdding: boolean = false;
+    conditionsByType = new Array<any>;
+    policyDetailsFetched: boolean = false;
 
     readonly operators: { value: ComparisonOperator; label: string }[] = [
         { value: '<', label: '<' },
@@ -71,7 +77,8 @@ export class PolicyManagementComponent implements OnInit {
     constructor(
         private baseAPI: BaseApiService,
         private expenseService: ExpenseService,
-        private fb: FormBuilder
+        private fb: FormBuilder,
+        private popoverService:PopOverService,
     ) {
         this.policyForm = this.fb.group({
             name: ['', Validators.required],
@@ -133,8 +140,11 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     viewPolicy(policy: any,showModal:boolean = true): void {
+        this.showViewPolicyModal = showModal;
+        this.showPolicyDetailsLoader = showModal;
         this.baseAPI.executeGet({url: `${apiDirectory.getPolicies}${policy.id}/`}).subscribe((data: any) => {
             this.selectedPolicyDetails = data;
+            this.policyDetailsFetched = true;
             !showModal? this.selectedPolicy = data : this.selectedPolicy = null;
             if(this.selectedPolicy){
                 if(this.selectedPolicy['reports'].length>0){
@@ -147,8 +157,12 @@ export class PolicyManagementComponent implements OnInit {
                  console.log(this.newReportRules);
                 }
             } 
+            this.showPolicyDetailsLoader = false;
             console.log(this.selectedPolicy);
-            this.showViewPolicyModal = showModal;
+        },
+        (error)=>{
+            this.policyDetailsFetched = true;
+            this.showPolicyDetailsLoader = false;
         });
     }
 
@@ -175,9 +189,13 @@ export class PolicyManagementComponent implements OnInit {
         params.set('ordering', '-created_at');
         this.baseAPI.executeGet({url: apiDirectory.getPolicies,params:params}).subscribe((data: any) => {
             this.isLoading = false;
+            this.loaderText = '';
             this.policies = data.results;
             console.log(this.policies);
-            
+        },
+        (error)=>{
+            this.isLoading = false;
+            this.loaderText = '';
         })
     }
 
@@ -232,9 +250,19 @@ export class PolicyManagementComponent implements OnInit {
     }
 
     createPolicy(policy: ExpensePolicy): void {
+        this.isLoading = true;
+        this.loaderText = 'Creating...'
         this.baseAPI.executePost({url: apiDirectory.createPolicy, body: policy}).subscribe((data: any) => {
             console.log('Policy created:', data);
+            this.isLoading = false;
+            this.loaderText = '';
+            this.popoverService.showSuccess('Policy created successfully',3000);
             this.getPolicies();
+        },
+        (error)=>{
+            this.isLoading = false;
+            this.loaderText = '';
+            this.popoverService.showError('Policy creation failed. Please try again after sometime.',3000);
         });
     }
 
@@ -550,6 +578,7 @@ export class PolicyManagementComponent implements OnInit {
 
     closeConditionModal(): void {
         this.showConditionModal = false;
+        this.selectedPropertyValues =  [];
     }
 
     onPropertyTypeChange(): void {
@@ -590,7 +619,7 @@ export class PolicyManagementComponent implements OnInit {
                 value: [...this.selectedPropertyValues]
             });
             console.log(this.newConditions);
-            
+            this.mergeByPropertyType(this.newConditions);
             this.closeConditionModal();
         }
     }
@@ -600,18 +629,17 @@ export class PolicyManagementComponent implements OnInit {
         return property ? property.name : type;
     }
 
-    getPropertyValueNames(propertyType: string, values: string | string[]): string {
+    getPropertyValueNames(propertyType: string, values: string | string[] | number[]): string | number {
         if (Array.isArray(values)) {
             return values.map(value => this.getPropertyValueName(propertyType, value)).join(', ');
         }
         return this.getPropertyValueName(propertyType, values);
     }
 
-    getPropertyValueName(propertyType: string, value: string): string {
+    getPropertyValueName(propertyType: string, value: string | number): string | number {
         const property = this.userProperties.find(p => p.type === propertyType);
         if (!property) return value;
-
-        const valueOption = property.values.find(v => v.value === value);
+        const valueOption = property.values.find(v => v.id === value);
         return valueOption ? valueOption.name : value;
     }
 
@@ -785,6 +813,7 @@ export class PolicyManagementComponent implements OnInit {
         // this.selectedPolicy = { ...policy }; // Create a copy of the policy
         this.showReportModal = true;
         this.newReportRules = [];
+        this.policyDetailsFetched = false;
         console.log('addReport - selectedPolicy:', this.selectedPolicy);
     }
 
@@ -793,6 +822,7 @@ export class PolicyManagementComponent implements OnInit {
         this.showReportModal = false;
         this.selectedPolicy = null;
         this.newReportRules = [];
+        this.policyDetailsFetched = false;
         console.log('closeReportModal - after reset - selectedPolicy:', this.selectedPolicy);
     }
 
@@ -823,8 +853,36 @@ export class PolicyManagementComponent implements OnInit {
         }));
     }
 
+    public mergeByPropertyType(data: any[]){
+        const map = new Map<string, number[]>();
+
+        for (const item of data) {
+            const existing = map.get(item.property_type) || [];
+            map.set(item.property_type, [...new Set([...existing, ...item.value])]); // Merge and remove duplicates
+        }
+        this.conditionsByType = Array.from(map.entries()).map(([property_type, value]) => ({ property_type, value }));
+        return this.conditionsByType;
+    }
+
+    isChecked(id: number|string): boolean {
+        const type = this.conditionForm.get('propertyType')?.value;
+        const values = this.conditionsByType.find((cond)=>cond.property_type == type)?.value;
+        console.log(values);
+        return values?.some((val: any) => val === id);
+    }
+
+    getSelectedValues(type: any) {
+        const values = this.conditionsByType.find((cond)=>cond.property_type == type)?.value;
+        console.log(values || [])
+        return values || [];
+    }
+
+
+
     onAddReport(): void {
-        console.log('onAddReport - selectedPolicy:', this.selectedPolicy);
+        if(this.disableReportAdding){
+            return;
+        }
         if (this.selectedPolicy) {
             const newReport: PolicyReport = {
                 rules: [...this.newReportRules]
@@ -867,9 +925,16 @@ export class PolicyManagementComponent implements OnInit {
         if (this.selectedPolicy) {
             let body = {...this.selectedPolicy};
             this.selectedPolicy['conditions'] =  this.selectedPolicy['condition']? this.selectedPolicy['condition'] : this.selectedPolicy['conditions'];
+            this.disableReportAdding = true;
             this.baseAPI.executePost({url: `${apiDirectory.getPolicies}${this.selectedPolicy.id}/update-policy/`, body: this.selectedPolicy}).subscribe((data: any) => {
                 console.log('Policy updated:', data);
                 this.closeReportModal();
+                this.disableReportAdding = false;
+                this.popoverService.showSuccess('Updated policy succesfully.',3000);
+            },
+            (error)=>{
+                this.disableReportAdding = false;
+                this.popoverService.showError('Failed to update the policy. Please try again later.',3000);
             });
         }
     }
@@ -902,8 +967,8 @@ export class PolicyManagementComponent implements OnInit {
         this.newReportRules.splice(index, 1);
     }
 
-    removeCondition(index: number): void {
-        this.newConditions.splice(index, 1);
+    removeConditionGroup(type: any): void {
+        this.newConditions = this.newConditions.filter((condition)=> condition.property_type != type);
     }
 
     // Add click outside handler to close dropdown
