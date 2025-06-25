@@ -5,8 +5,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ExpenseReportsComponent } from './expense-reports.component';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { appCommonsModule } from 'src/app/commons/commons.module';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
     declarations: [ExpenseReportsComponent],
@@ -16,7 +17,10 @@ import { appCommonsModule } from 'src/app/commons/commons.module';
         appCommonsModule,
         MatTableModule,
         MatButtonModule,
+        MatIconModule,
         MatCardModule,
+        ReactiveFormsModule,
+        FormsModule,
         RouterModule.forChild([
             {
                 path: '',

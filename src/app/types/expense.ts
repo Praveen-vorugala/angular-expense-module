@@ -44,6 +44,7 @@ export interface ExpenseType {
     description?: string;
     is_active: boolean;
     category_name?: string;
+    code?:string;
 }
 
 export type ExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REIMBURSED' | 'SUBMITTED'| 'TEMPORARY_SAVE';
@@ -76,6 +77,7 @@ export interface ExpenseReport {
     reimbursedAt?: string;
     from_report_date ?: string,
     to_report_date ?: string,
+    is_edit_enabled?:boolean,
 }
 
 export interface PolicyReport {

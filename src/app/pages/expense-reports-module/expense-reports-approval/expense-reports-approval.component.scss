@@ -1,0 +1,25 @@
+.input-custom{
+    &:hover{
+        border: 1px solid black;
+        border-radius: 8px;
+    }
+}
+.custom-popup {
+  position: absolute;
+  top: 50%;
+  left: 70%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  background-color: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: max-content;
+  max-width: 250px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  z-index:10;
+}

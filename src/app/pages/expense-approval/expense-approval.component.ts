@@ -48,13 +48,14 @@ interface ExpenseChange {
     styleUrls: ['./expense-approval.component.scss']
 })
 export class ExpenseApprovalComponent implements OnInit {
+    isLoading:boolean = false;
     frequencyOptions = [
         { value: 'DAILY', label: 'Daily' },
         { value: 'MONTHLY', label: 'Monthly' }
     ];
     frequency: FormControl = new FormControl('DAILY');
-    fromDate: FormControl = new FormControl('');
-    toDate: FormControl = new FormControl('');
+    fromDate: FormControl = new FormControl("2025-06-01");
+    toDate: FormControl = new FormControl("2025-06-29");
     expenseConfig: ExpenseConfig[] = [];
     changedExpenses: ExpenseChange[] = [];
     showPopup: boolean = false;
@@ -65,7 +66,9 @@ export class ExpenseApprovalComponent implements OnInit {
     constructor(private baseAPI: BaseApiService) {}
 
     ngOnInit() {
-        // this.getExpensConfiguration();
+        console.log(this.fromDate.value);
+        
+        this.getExpensConfiguration();
     }
 
     private initializeTable() {
@@ -87,12 +90,23 @@ export class ExpenseApprovalComponent implements OnInit {
         this.columns = Array.from(columnSet);
     }
 
+    getColumnName(column:string):string{
+        const config:any = Object.values(this.expenseConfig[0])[0];
+        console.log(column);
+        
+        return config[column]['name'] ;
+    }
+
     getExpensConfiguration() {
+        this.isLoading = true;
         const params = new Map<string, string>();
         params.set('from_date', this.fromDate.value || '');
         params.set('to_date', this.toDate.value || '');
         this.baseAPI.executeGet({url: apiDirectory.expenseSummary,params:params}).subscribe(res => {
             this.expenseConfig = res;
+            console.log(res);
+            
+            this.isLoading = false;
             this.expenseConfig.forEach(config => {
                 Object.values(config).forEach(dateConfig => {
                     Object.entries(dateConfig).forEach(([key, value]) => {
@@ -184,16 +198,34 @@ export class ExpenseApprovalComponent implements OnInit {
         const config = this.expenseConfig.find(c => c[date]);
         if (config) {
             const value = config[date][column];
-            return value['is_permitted'];
+            return value['is_permitted'] && (value['status'] != 'APPROVED');
         }
         return false;
+    }
+
+    showHistory(date: string, column: string,value:boolean){
+        console.log(value);
+        
+        const config = this.expenseConfig.find(c => c[date]);
+        if (config) {
+            const value = config[date][column];
+            value.show_popup = value;
+        }
+        return value;
+    }
+    canViewHistory(date: string, column: string){
+        const config = this.expenseConfig.find(c => c[date]);
+         if (config) {
+            return config[date][column]['show_popup'];
+         }
+         return false
     }
 
     getHistoryValues(date: string, column: string,key:string): number {
         const config = this.expenseConfig.find(c => c[date]);
         if (config) {
             const value = config[date][column];
-            return value['history'][value['history'].length - 1][key];
+            return value['history'][0][key];
         }
         return 0;
     }
@@ -202,7 +234,6 @@ export class ExpenseApprovalComponent implements OnInit {
         const config = this.expenseConfig.find(c => c[date]);
         if (config) {
             const value = config[date][column];
-            console.log(value);
             if(value['history'].length>0){
                 return true;
             }

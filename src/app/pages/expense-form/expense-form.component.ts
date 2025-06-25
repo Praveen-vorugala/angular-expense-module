@@ -19,8 +19,9 @@ export class ExpenseFormComponent implements OnInit {
     expenseForm: FormGroup;
     currentMetric:string = '';
     expenseTypes: ExpenseType[] = [];
-    selectedFiles: Map<string, File> = new Map();
+    selectedFiles: Map<string, string> = new Map();
     isLoading: boolean = false;
+    currentExpenseName:string = '';
     currentExpense: ExpenseReport = {
         id: '',
         policy: '',
@@ -44,6 +45,7 @@ export class ExpenseFormComponent implements OnInit {
     fromDate : string = '';
     toDate : string = '';
     editExpenses: boolean = false;
+    places:any [] = []
     editingExpenseIndex: number = -1;  // Add this to track which expense is being edited
 
     constructor(
@@ -70,6 +72,7 @@ export class ExpenseFormComponent implements OnInit {
             fromLocation: [''],
             toLocation: [''],
             tripType: [''],
+            places:[''],
             distance:['']
         });
 
@@ -80,6 +83,7 @@ export class ExpenseFormComponent implements OnInit {
         // }
         // this.getPolicyFrequencies();
         this.getCities();
+        this.getPlaces()
         // this.getUserPolicy('DAILY');
     }
 
@@ -200,11 +204,28 @@ export class ExpenseFormComponent implements OnInit {
         })
     }
 
+    getPlaces(){
+        this.baseAPI.executeGet({
+            url : apiDirectory.getPlaces
+        }).subscribe({
+            next : (res)=>{
+                const places = res.results as any;
+                if (places && places.length > 0) {
+                    this.places = places;
+                }
+            },
+            error : (err)=>{
+                console.log(err);
+            }
+        })
+    }
+
     toggleDropdown() {
         this.showDropdown = !this.showDropdown;
     }
 
     selectExpenseType(type: ExpenseType) {
+        this.currentExpenseName = type.code? type.code:'';
         this.expenseForm.get('expenseType')?.setValue(type.id);
         this.showDropdown = false;
         
@@ -374,8 +395,6 @@ export class ExpenseFormComponent implements OnInit {
     }
 
     getExpenseTypeName(expenseTypeId: string): string {
-        console.log(expenseTypeId);
-        
         const type = this.expenseTypes.find(t => t.id === expenseTypeId);
         return type ? type.name : 'Unknown';
     }
@@ -394,15 +413,32 @@ export class ExpenseFormComponent implements OnInit {
                 input.value = '';
                 return;
             }
-            const expenseType = this.expenseForm.get('expenseType')?.value;
-            if (expenseType) {
-                this.selectedFiles.set(expenseType, file);
-                this.expenseForm.get('receipt')?.setValue(file.name);
-            } else {
-                alert('Please select an expense type before uploading a receipt');
-                input.value = '';
-            }
+            this.uploadSampleFile(file);
+            // const expenseType = this.expenseForm.get('expenseType')?.value;
+            // if (expenseType) {
+            //     this.selectedFiles.set(expenseType, file);
+            //     this.expenseForm.get('receipt')?.setValue(file.name);
+            // } else {
+            //     alert('Please select an expense type before uploading a receipt');
+            //     input.value = '';
+            // }
         }
+    }
+
+    uploadSampleFile(uploadedSampleFile:any){
+        const file = new FormData();
+        file.append('file',uploadedSampleFile);
+        this.baseAPI.executePost({url:apiDirectory.uploadSampleFile,body:file}).subscribe(res =>{
+            console.log(res);
+            this.expenseForm.get('receiptFile')?.setValue(res.url);
+            this.selectedFiles.set(this.expenseForm.get('expenseType')?.value, res.url);
+            console.log(this.selectedFiles);
+            
+        })
+    }
+
+    openWindow(url:string | undefined ){
+        window.open(url,'BLANK');
     }
 
     addExpense(): void {
@@ -421,7 +457,7 @@ export class ExpenseFormComponent implements OnInit {
                 expense_type: expenseType,
                 amount: amount,
                 description: description,
-                receipt_file: receipt ? receipt.name : '',
+                receipt_file: receipt ? receipt : '',
                 from_location: fromLocation,
                 to_location: toLocation,
                 trip_type: tripType,
@@ -541,7 +577,7 @@ export class ExpenseFormComponent implements OnInit {
         if (expense.receipt_file) {
             // Note: In a real application, you might want to fetch the actual file
             // For now, we'll just store the filename
-            this.selectedFiles.set(expense.expense_type, new File([], expense.receipt_file));
+            this.selectedFiles.set(expense.expense_type, '');
         }
 
         // Update form for expense type

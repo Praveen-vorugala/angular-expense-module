@@ -1,12 +1,22 @@
 <div class="bg-white shadow rounded-lg p-6">
   <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-900">My Expense Reports</h2>
+    <h2 class="text-xl font-semibold text-gray-900">Expense Approvals</h2>
+    <div>
+        <select
+                [(ngModel)]="statusFilter" (ngModelChange)="getReports()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option *ngFor="let type of statusOptions" [value]="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+    </div>
   </div>
 
   <div *ngIf="!isLoading" class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -16,10 +26,13 @@
       <tbody class="bg-white divide-y divide-gray-200">
         <tr *ngFor="let report of submittedReports">
           <td class="px-6 py-4 whitespace-nowrap">
-            {{report.from_report_date | date}}
+            {{report.expense_report.user_name | titlecase}}
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            ₹{{report.total_amount}}
+            {{report.expense_report.from_report_date | date}}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            ₹{{report.expense_report.latest_total_amount}}
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" 
@@ -32,10 +45,10 @@
             </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <button *ngIf="report.is_edit_enabled" (click)="editReportDetails(report)"
+            <!-- <button *ngIf="report.expense_report.is_edit_enabled" (click)="editReportDetails(report)"
                     class="mr-5 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               Edit Report
-            </button>
+            </button> -->
             <button (click)="viewReportDetails(report)"
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               View Details
@@ -72,17 +85,17 @@
         <div class="my-2">
         <div class="flex mb-2">
           <span class="text-gray-600 mr-1">User:</span>
-          <span>{{selectedReport.user.name }}</span>
+          <span>{{selectedReport.expense_report.user.name }}</span>
         </div>
         <div class="flex mb-2">
           <span class="text-gray-600 mr-1">Date:</span>
-          <span>{{selectedReport.from_report_date | date : 'dd MMM, yyyy'}}</span>
+          <span>{{selectedReport.expense_report.from_report_date | date : 'dd MMM, yyyy'}}</span>
         </div>
         <div class="flex mb-2">
           <span class="text-gray-600 mr-1">Total Amount:</span>
-          <span>₹{{selectedReport.latest_total_amount}}</span>
+          <span>₹{{selectedReport.expense_report.latest_total_amount}}</span>
         </div>
-        <div class="flex items-center mb-2">
+        <div class="flex mb-2">
           <span class="text-gray-600 mr-1">Status:</span>
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" [ngClass]="{
             'bg-green-100 text-green-600': selectedReport.status === 'APPROVED',
@@ -90,7 +103,7 @@
             'bg-red-100 text-red-600': selectedReport.status === 'REJECTED',
             'bg-blue-100 text-blue-600': selectedReport.status === 'SUBMITTED'
           }">
-            {{selectedReport.status}}
+            {{selectedReport.expense_report.status}}
           </span>
         </div>
         </div>
@@ -106,7 +119,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reciepts</th>
                 </tr>
                 </thead> 
-                <tr *ngFor="let item of selectedReport.expenses;let i = index ">
+                <tr *ngFor="let item of selectedReport.expense_report.expenses;let i = index ">
                     <td class="flex pr-[1.5em] py-4 text-[#afafaf] whitespace-nowrap">
                         {{item.expense_type.name || 'Unknown'}}
                     </td>
@@ -114,14 +127,12 @@
                         
                         <span class="flex items-center" >
                           ₹ &nbsp;
-                            <ng-container>
+                            <ng-container *ngIf="selectedReport.expense_report.status == 'APPROVED'">
                                 {{item.latest_amount}}
-                            </ng-container> &nbsp;&nbsp;
-                            <!-- <input class="input-custom p-2 w-[6.5em]" size="auto" *ngIf="selectedReport.status != 'APPROVED'" type="number" [(ngModel)]="item.latest_amount" > &nbsp; -->
-                            <div *ngIf="item.history.length>0" class="relative inline-block">
-                              <div #iconWrapper (mouseenter)="onMouseEnter($event, i, iconWrapper)" (mouseleave)="hoveredIndex = -1" >
-                                <mat-icon>info</mat-icon>
-                              </div>
+                            </ng-container> 
+                            <input class="input-custom p-2 w-[6.5em]" size="auto" *ngIf="selectedReport.expense_report.status != 'APPROVED'" type="number" [(ngModel)]="item.latest_amount" >
+                            <div *ngIf="item.history.length>0" class="relative flex items-center ">
+                              <mat-icon (mouseenter)="hoveredIndex = i" (mouseleave)="hoveredIndex = -1" >info</mat-icon>
                               <div *ngIf="hoveredIndex === i" class="absolute left-1/2 transform -translate-x-1/2 mt-2 z-10 w-54 p-2 bg-white border border-gray-300 shadow-lg rounded text-sm">
                                   <div class="flex justify-center" ><strong>History</strong></div>
                                   <div>Raised Amount - {{ item.amount }} </div>
@@ -160,7 +171,7 @@
         
       </ng-container>
       </div>
-      <!-- <div *ngIf="getExpenseItems" class="sticky bottom-0 bg-white pt-4 pb-2 mt-4 flex justify-end border-t">
+      <div *ngIf="getExpenseItems" class="sticky bottom-0 bg-white pt-4 pb-2 mt-4 flex justify-end border-t">
             <div *ngIf="selectedReport.status != 'APPROVED'">
                 <button (click)="rejectReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 mr-8">
                     Reject
@@ -169,7 +180,7 @@
                     Accept
                 </button>
             </div>
-        </div> -->
+        </div>
      
       
     </div>

@@ -30,6 +30,12 @@ const routes: Routes = [
                 loadChildren: () => import('./pages/expense-form/expense-form.module').then(m => m.ExpenseFormModule)
             },
             {
+                path: 'expense-report-approval',
+                canActivate: [AuthGuard],
+                data: { allowedRoles: ['EMPLOYEE', 'MANAGER','ADMIN'] },
+                loadChildren: () => import('./pages/expense-reports-module/expense-reports-module.module').then(m => m.ExpenseReportsModuleModule)
+            },
+            {
                 path: 'approve-expenses',
                 canActivate: [AuthGuard],
                 data: { allowedRoles: ['MANAGER','ADMIN'] },

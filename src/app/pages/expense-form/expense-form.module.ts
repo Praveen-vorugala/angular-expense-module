@@ -10,6 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { ExpenseFormComponent } from './expense-form.component';
 import { appCommonsModule } from 'src/app/commons/commons.module';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
     declarations: [ExpenseFormComponent],
@@ -23,6 +24,7 @@ import { appCommonsModule } from 'src/app/commons/commons.module';
         MatButtonModule,
         MatCardModule,
         MatSnackBarModule,
+        MatIconModule,
         appCommonsModule,
         RouterModule.forChild([
             {

@@ -769,7 +769,7 @@ export class PolicyManagementComponent implements OnInit {
             case 'CONSTANT':
                 return `Amount: ${rule.amount}`;
             case 'ACTUAL':
-                return `Operator: ${rule.operator} ${rule.amount}`;
+                return `< ${rule.amount}`;
             case 'CALCULATED':
                 if (rule.meta_data) {
                     return `Threshold: ${rule.meta_data.threshold}, Rate Before: ${rule.meta_data.rate_before_threshold}, Rate After: ${rule.meta_data.rate_after_threshold}`;

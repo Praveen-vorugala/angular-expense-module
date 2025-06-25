@@ -11,16 +11,16 @@
         </div>
         
     </div>
-
+    <app-loader [show]="isLoading"></app-loader>
     <!-- Dynamic Table -->
-    <div class="overflow-x-auto">
+    <div *ngIf="!isLoading" class="overflow-x-auto " style="height: 24em;">
         <table class="min-w-full bg-white border border-gray-200">
             <thead>
                 <tr>
                     <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                     </th>
-                    <th *ngFor="let column of columns" 
+                    <th *ngFor="let column of columns" [matTooltip]="getColumnName(column)"
                         class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {{column}}
                     </th>

@@ -78,6 +78,9 @@ export class ExpenseReportsComponent implements OnInit {
   selectedReport: any | null = null;
   expenseTypes: Record<string, string> = {};
   isLoading: boolean = false;
+  getExpenseItems:boolean = false;
+  hoveredIndex:number = -1;
+  popupPosition: 'top' | 'bottom' = 'bottom';
 
   constructor(
     private expenseService: ExpenseService,
@@ -118,11 +121,13 @@ export class ExpenseReportsComponent implements OnInit {
 
   viewReportDetails(report: ExpenseReport): void {
     this.selectedReport = report;
+    this.getExpenseItems = false;
     console.log(this.selectedReport);
     this.baseAPI.executeGet({
       url : apiDirectory.expenseReports + this.selectedReport.id + '/'
     }).subscribe(
       (res : any) => {
+        this.getExpenseItems = true;
         this.selectedReport = res;
       },
       (err : any) => {
@@ -146,6 +151,21 @@ export class ExpenseReportsComponent implements OnInit {
 
   editReportDetails(report: ExpenseReport): void {
     this.router.navigate(['/submit-expense/', report.id]);
+  }
+
+  openWindow(url:string){
+    window.open(url,'_BLANK');
+  }
+
+  onMouseEnter(event: MouseEvent, index: number, element: HTMLElement) {
+    this.hoveredIndex = index;
+
+    const rect = element.getBoundingClientRect();
+    const popupHeight = 60; // Adjust based on popup height
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    this.popupPosition = spaceBelow < popupHeight ? 'top' : 'bottom';
   }
 
 

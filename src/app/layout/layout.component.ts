@@ -39,12 +39,18 @@ import { AuthService } from '../services/auth.service';
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Reports</span>
           </a>
 
-          <!-- Approve Expenses - Visible to managers and admins -->
-          <a mat-list-item routerLink="/approve-expenses" routerLinkActive="active" 
-             class="hover:bg-gray-50" *ngIf="isManager ">
+          <a mat-list-item routerLink="/expense-report-approval" routerLinkActive="active" 
+             class="hover:bg-gray-50" *ngIf="isAdmin ||isManager ">
             <mat-icon class="text-gray-500">check_circle</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Approve Expenses</span>
           </a>
+
+          <!-- Approve Expenses - Visible to managers and admins -->
+          <!-- <a mat-list-item routerLink="/approve-expenses" routerLinkActive="active" 
+             class="hover:bg-gray-50" *ngIf="isManager ">
+            <mat-icon class="text-gray-500">check_circle</mat-icon>
+            <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Approve Expenses</span>
+          </a> -->
 
           <!-- Policies - Visible only to admins -->
           <a mat-list-item routerLink="/policies" routerLinkActive="active" 

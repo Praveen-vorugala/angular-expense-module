@@ -69,6 +69,15 @@
                         </div>
                     </div>
 
+                    <div class="flex flex-col gap-2" *ngIf="currentExpenseName == 'EHQ' || currentExpenseName == 'OA' ">
+                        <label for="tripType" class="text-sm font-medium text-gray-700">Where did you visit</label>
+                        <select id="tripType" name="tripType" formControlName="places"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 p-3 bg-white">
+                            <option value="">Select place</option>
+                            <option *ngFor="let place of places" [value]="place.id">{{place.name}}</option>
+                        </select>
+                    </div>
+
                     <!-- Amount -->
                     <div class="flex flex-col gap-2" *ngIf="!isPetrolAllowance">
                         <label for="amount" class="text-sm font-medium text-gray-700">Amount</label>
@@ -230,8 +239,8 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         {{expense.description || 'N/A'}}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        {{expense.receipt_file || 'N/A'}}
+                                    <td class="px-6 py-4 cursor-pointer  whitespace-nowrap">
+                                        <mat-icon (click)="openWindow(expense.receipt_file)" >open_in_new</mat-icon>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button (click)="startEditingExpense(expense, i)" 
