@@ -20,27 +20,28 @@ import { AuthService } from '../services/auth.service';
         </div>
         <mat-nav-list class="py-2">
           <!-- Dashboard - Visible to all -->
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="active" class="hover:bg-gray-50 flex items-center" (click)="closeSidenav()">
+          <a mat-list-item routerLink="/dashboard" routerLinkActive="active" 
+            class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" (click)="closeSidenav()">
             <mat-icon class="text-gray-500">dashboard</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Dashboard</span>
           </a>
 
           <!-- Submit Expense - Visible to employees -->
           <a mat-list-item routerLink="/submit-expense" routerLinkActive="active" 
-             class="hover:bg-gray-50" *ngIf="isEmployee || isManager " (click)="closeSidenav()">
+             class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" *ngIf="isEmployee || isManager " (click)="closeSidenav()">
             <mat-icon class="text-gray-500">receipt</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Submit Expense</span>
           </a>
 
             <!-- Reports - Visible to employees -->
           <a mat-list-item routerLink="/reports" routerLinkActive="active" 
-             class="hover:bg-gray-50" *ngIf="isEmployee ||isManager " (click)="closeSidenav()">
-            <mat-icon class="text-gray-500">check_circle</mat-icon>
+             class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" *ngIf="isEmployee ||isManager " (click)="closeSidenav()">
+            <mat-icon class="text-gray-500 menu-collapsed">check_circle</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Reports</span>
           </a>
 
           <a mat-list-item routerLink="/expense-report-approval" routerLinkActive="active" 
-             class="hover:bg-gray-50" *ngIf="isAdmin ||isManager " (click)="closeSidenav()">
+             class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" *ngIf="isAdmin ||isManager " (click)="closeSidenav()">
             <mat-icon class="text-gray-500">check_circle</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Approve Expenses</span>
           </a>
@@ -54,26 +55,30 @@ import { AuthService } from '../services/auth.service';
 
           <!-- Policies - Visible only to admins -->
           <a mat-list-item routerLink="/policies" routerLinkActive="active" 
-             class="hover:bg-gray-50" *ngIf="isAdmin" (click)="closeSidenav()">
+             class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" *ngIf="isAdmin" (click)="closeSidenav()">
             <mat-icon class="text-gray-500">policy</mat-icon>
             <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Policies</span>
           </a>
 
           <!-- Admin only options -->
           <ng-container *ngIf="isAdmin">
-            <a mat-list-item routerLink="/expense-types" routerLinkActive="active" class="hover:bg-gray-50" (click)="closeSidenav()">
+            <a mat-list-item routerLink="/expense-types" routerLinkActive="active" 
+              class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" (click)="closeSidenav()">
               <mat-icon class="text-gray-500">category</mat-icon>
               <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Expense Types</span>
             </a>
-            <a mat-list-item routerLink="/reports" routerLinkActive="active" class="hover:bg-gray-50" (click)="closeSidenav()">
+            <a mat-list-item routerLink="/reports" routerLinkActive="active" 
+              class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" (click)="closeSidenav()">
               <mat-icon class="text-gray-500">assessment</mat-icon>
               <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Reports</span>
             </a>
-            <a mat-list-item routerLink="/dropdown-types" routerLinkActive="active" class="hover:bg-gray-50" (click)="closeSidenav()">
+            <a mat-list-item routerLink="/dropdown-types" routerLinkActive="active" 
+              class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" (click)="closeSidenav()">
               <mat-icon class="text-gray-500">list</mat-icon>
               <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">Dropdown Types</span>
             </a>
-            <a mat-list-item routerLink="/user-properties" routerLinkActive="active" class="hover:bg-gray-50" (click)="closeSidenav()">
+            <a mat-list-item routerLink="/user-properties" routerLinkActive="active" 
+              class="hover:bg-gray-50" [ngClass]="isCollapsed? 'menu-collapsed':''" (click)="closeSidenav()">
               <mat-icon class="text-gray-500">person</mat-icon>
               <span class="ml-3 text-gray-700" *ngIf="!isCollapsed">User Properties</span>
             </a>
@@ -136,6 +141,9 @@ import { AuthService } from '../services/auth.service';
     :host ::ng-deep .mat-mdc-list-item-unscoped-content{
       display: flex;
       align-items: center;
+    }
+    :host ::ng-deep .menu-collapsed .mat-mdc-list-item-unscoped-content{
+      justify-content: center;
     }
   `]
 })
