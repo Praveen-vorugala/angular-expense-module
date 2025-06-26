@@ -1,14 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
-import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ExpenseService } from '../../services/expense.service';
 import { ExpenseType, User, ExpensePolicy, ExpenseItem, ExpenseReport } from '../../types/expense';
 import { BaseApiService } from 'src/app/services/api/base.api.service';
 import { apiDirectory } from 'src/global';
 import { PopOverService } from 'src/app/services/pop-over/pop-over.service';
+import { of, Observable, forkJoin, Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-expense-form',
@@ -47,7 +45,9 @@ export class ExpenseFormComponent implements OnInit {
     editExpenses: boolean = false;
     places:any [] = []
     editingExpenseIndex: number = -1;  // Add this to track which expense is being edited
-
+    firstChange: boolean = true;
+    loadingText: string = '';
+    cities : any[] = [];
     constructor(
         private fb: FormBuilder,
         private expenseService: ExpenseService,
@@ -82,12 +82,15 @@ export class ExpenseFormComponent implements OnInit {
         //     this.currentExpense.employee_id = currentUser.id;
         // }
         // this.getPolicyFrequencies();
-        this.getCities();
-        this.getPlaces()
+        // this.getCities();
+        // this.getPlaces()
         // this.getUserPolicy('DAILY');
     }
 
     setFromDate(event : Event){
+        if(this.firstChange){
+            this.initialiseExpenseTypes();
+        }
         this.fromDate = (event.target as HTMLInputElement).value;
         this.currentExpense.from_report_date = this.fromDate;
         this.currentExpense.to_report_date = this.fromDate;
@@ -99,21 +102,6 @@ export class ExpenseFormComponent implements OnInit {
     //     this.currentExpense.to_report_date = this.toDate;
     // }
     
-    getPolicyFrequencies(){
-        this.baseAPI.executeGet({
-            url : apiDirectory.getUserPolicyFrequencies
-        }).subscribe({
-            next : (res)=>{
-                const frequencies = res as any;
-                if (frequencies && frequencies.length > 0) {
-                    this.policyFrequencies = frequencies;
-                }
-            },
-            error : (err)=>{
-                console.log(err);
-            }
-        })
-    }
 
     getDefaultExpenses(){
         const params = new Map<string, any>();
@@ -187,38 +175,6 @@ export class ExpenseFormComponent implements OnInit {
             }
         )
     }
-    public cities : any[] = [];
-    getCities(){
-        this.baseAPI.executeGet({
-            url : apiDirectory.getCities
-        }).subscribe({
-            next : (res)=>{
-                const cities = res.results as any;
-                if (cities && cities.length > 0) {
-                    this.cities = cities;
-                }
-            },
-            error : (err)=>{
-                console.log(err);
-            }
-        })
-    }
-
-    getPlaces(){
-        this.baseAPI.executeGet({
-            url : apiDirectory.getPlaces
-        }).subscribe({
-            next : (res)=>{
-                const places = res.results as any;
-                if (places && places.length > 0) {
-                    this.places = places;
-                }
-            },
-            error : (err)=>{
-                console.log(err);
-            }
-        })
-    }
 
     toggleDropdown() {
         this.showDropdown = !this.showDropdown;
@@ -272,10 +228,8 @@ export class ExpenseFormComponent implements OnInit {
             this.getCurrentExpenses();
         } else {
             // Initialize expense types for new expense
-            this.getPolicyFrequencies();
-            this.getCities();
-            this.getUserPolicy('DAILY');
-        }
+            // this.initialiseExpenseTypes()
+;        }
             
         // Subscribe to expense type changes
         this.expenseForm.get('expenseType')?.valueChanges.subscribe(typeId => {
@@ -328,6 +282,44 @@ export class ExpenseFormComponent implements OnInit {
                 this.calculateDistanceAndAmount(this.expenseForm.get('fromLocation')?.value, to,tripType);
             }
         });
+    }
+
+    initialiseExpenseTypes(){
+        this.isLoading = true;
+        forkJoin({
+            policyFrequencies : this.baseAPI.executeGet({ url: apiDirectory.getUserPolicyFrequencies }),
+            cities : this.baseAPI.executeGet({ url : apiDirectory.getCities }),
+            places : this.baseAPI.executeGet({ url : apiDirectory.getPlaces }),
+            userPolicies : this.baseAPI.executeGet({ url : apiDirectory.getUserPolicy })
+        }).subscribe((response)=>{
+            console.log(response);
+            this.isLoading = false;
+            this.firstChange = false;
+            const frequencies = response.policyFrequencies as any;
+            if (frequencies && frequencies.length > 0) {
+                this.policyFrequencies = frequencies;
+            }
+            const cities = response.cities.results as any;
+            if (cities && cities.length > 0) {
+                this.cities = cities;
+            }
+            const places = response.places.results as any;
+            if (places && places.length > 0) {
+                this.places = places;
+            }
+
+            this.selectedFrequency = 'DAILY';
+            const policy = response.userPolicies as ExpensePolicy;
+            if (policy) {
+                this.setExpenseTypes(policy);
+                this.currentExpense.policy = policy.id; // Use first active policy
+                this.policy = policy as ExpensePolicy;
+            }
+        },
+        (error)=>{
+            this.isLoading = false;
+            this.popover.showError('Error while fetching resources. Please try again later',3000);
+        })
     }
 
     getCurrentExpenses(){
@@ -512,8 +504,7 @@ export class ExpenseFormComponent implements OnInit {
 
     submitExpenses(): void {
         if (this.currentExpense.expenses.length > 0) {
-            // Create a copy of the expense report to submit
-
+            // Create a copy of the expense report to submit          
             
             const expenseReport: any = {
                 ...this.currentExpense,
@@ -527,6 +518,8 @@ export class ExpenseFormComponent implements OnInit {
 
             // Determine if this is a create or update operation
             const isUpdate = !!this.currentExpense.id;
+            this.isLoading = true;
+            this.loadingText = isUpdate? 'Updating...':'Creating...';
             const url = isUpdate 
                 ? `${apiDirectory.expenseReports}${this.currentExpense.id}/`
                 : apiDirectory.expenseReports;
@@ -538,10 +531,14 @@ export class ExpenseFormComponent implements OnInit {
 
             request$.subscribe({
                 next: (res) => {
+                    this.isLoading = false;
+                    this.loadingText = '';
                     this.router.navigate(['/reports']);
                 },
                 error: (err) => {
                     console.log(err);
+                    this.isLoading = false;
+                    this.loadingText = '';
                     Object.keys(err.error).forEach((key) => {
                         this.popover.showError(err.error[key][0]);
                     });
